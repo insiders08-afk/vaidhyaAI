@@ -1,0 +1,35 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "outDir": "../build/tests-dist",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "target": "ES2022",
+    "resolveJsonModule": true,
+    "jsx": "react-jsx",
+    "declaration": false,
+    "emitDeclarationOnly": false
+  },
+  "include": [
+    "../packages/pipeline/eval/src/**/*.ts",
+    "../packages/pipeline/audio-ingest/src/**/*.ts",
+    "../packages/pipeline/transcribe/src/**/*.ts",
+    "../packages/pipeline/assemble/src/**/*.ts",
+    "../packages/pipeline/note-core/src/**/*.ts",
+    "../packages/pipeline/shared/src/**/*.ts",
+    "../packages/pipeline/medgemma-scribe/src/**/*.ts",
+    "../packages/openclaw/src/**/*.ts",
+    "../packages/llm/src/**/*.ts",
+    "../packages/llm-medgemma/src/**/*.ts",
+    "../packages/storage/src/**/*.ts",
+    "../packages/ui/src/lib/capability-status.ts",
+    "../packages/ui/src/lib/transcription-languages.ts",
+    "../packages/ui/src/lib/__tests__/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "../apps/web/.next",
+    "../build"
+  ]
+}
