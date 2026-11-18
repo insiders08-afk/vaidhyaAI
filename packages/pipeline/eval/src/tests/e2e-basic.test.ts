@@ -154,11 +154,11 @@ test("Phase 4: Mock transcription - verify mocked API call", { timeout: 5000 }, 
   
   console.log("⏳ Importing modules...")
   const audioProcessing = await import("../../../audio-ingest/src/capture/audio-processing.js")
-  const whisperProvider = await import("../../../transcribe/src/providers/whisper-transcriber.js")
+  const gnaniProvider = await import("../../../transcribe/src/providers/gnani-transcriber.js")
   console.log("✅ Modules imported")
   
   const { createWavBlob, TARGET_SAMPLE_RATE } = audioProcessing
-  const { transcribeWavBuffer } = whisperProvider
+  const { transcribeWithGnani } = gnaniProvider
   
   console.log("⏳ Creating test WAV file...")
   const samples = new Float32Array(16000).fill(0.1)
@@ -168,14 +168,13 @@ test("Phase 4: Mock transcription - verify mocked API call", { timeout: 5000 }, 
   
   console.log("⏳ Setting up mock fetch...")
   const originalFetch = globalThis.fetch
-  const originalKey = process.env.OPENAI_API_KEY
-  process.env.OPENAI_API_KEY = "test-key-123"
+  const gnaniApiKey = "test-key-123"
   
   let fetchCalled = false
   globalThis.fetch = (async () => {
     console.log("   🔵 Mock fetch called")
     fetchCalled = true
-    return new Response(JSON.stringify({ text: "This is a test transcription." }), { 
+    return new Response(JSON.stringify({ success: true, transcript: "This is a test transcription.", model: "prisma-v3.0" }), { 
       status: 200,
       headers: { 'Content-Type': 'application/json' }
     })
@@ -185,19 +184,19 @@ test("Phase 4: Mock transcription - verify mocked API call", { timeout: 5000 }, 
   try {
     console.log("⏳ Calling transcribeWavBuffer...")
     const startTime = Date.now()
-    const result = await transcribeWavBuffer(wavBuffer, "test.wav")
+    const result = await transcribeWithGnani(wavBuffer, "test.wav", { apiKey: gnaniApiKey, fetchFn: globalThis.fetch })
     const duration = Date.now() - startTime
     console.log(`✅ Transcription completed in ${duration}ms`)
-    console.log(`   Result: "${result}"`)
+    console.log(`   Result: "${result.transcript}"`)
     
     assert(fetchCalled, "Mock fetch should have been called")
-    assert.equal(result, "This is a test transcription.", "Should return mocked transcription")
+    assert.equal(result.transcript, "This is a test transcription.", "Should return mocked transcription")
     
     console.log("✅ TEST 4 PASSED: Mock transcription works\n")
   } finally {
     console.log("⏳ Restoring original fetch and env...")
     globalThis.fetch = originalFetch
-    process.env.OPENAI_API_KEY = originalKey
+    delete process.env.OPENAI_API_KEY
     console.log("✅ Restored")
   }
 })
@@ -305,8 +304,8 @@ test("Phase 6: Complete pipeline - audio to final transcript", { timeout: 10000 
   
   // PHASE 2: Mock transcription
   console.log("\n🎤 PHASE 2: Transcription (Mocked)")
-  const whisperProvider = await import("../../../transcribe/src/providers/whisper-transcriber.js")
-  const { transcribeWavBuffer } = whisperProvider
+  const gnaniProvider = await import("../../../transcribe/src/providers/gnani-transcriber.js")
+  const { transcribeWithGnani } = gnaniProvider
   
   const mockTexts = [
     "Patient reports headache for three days.",
@@ -316,15 +315,14 @@ test("Phase 6: Complete pipeline - audio to final transcript", { timeout: 10000 
   ]
   
   const originalFetch = globalThis.fetch
-  const originalKey = process.env.OPENAI_API_KEY
-  process.env.OPENAI_API_KEY = "test-key"
+  const gnaniApiKey = "test-key"
   
   let callCount = 0
   globalThis.fetch = (async () => {
     const text = mockTexts[callCount % mockTexts.length]!
     console.log(`   API call ${callCount + 1}: "${text}"`)
     callCount++
-    return new Response(JSON.stringify({ text }), { status: 200 })
+    return new Response(JSON.stringify({ success: true, transcript: text, model: "prisma-v3.0" }), { status: 200 })
   }) as typeof fetch
   
   const transcripts: { seqNo: number; startMs: number; endMs: number; text: string }[] = []
@@ -332,7 +330,8 @@ test("Phase 6: Complete pipeline - audio to final transcript", { timeout: 10000 
   try {
     for (const segment of segments) {
       const wavBuffer = Buffer.from(await segment.blob.arrayBuffer())
-      const text = await transcribeWavBuffer(wavBuffer, `segment-${segment.seqNo}.wav`)
+      const result = await transcribeWithGnani(wavBuffer, `segment-${segment.seqNo}.wav`, { apiKey: gnaniApiKey, fetchFn: globalThis.fetch })
+      const text = result.transcript
       transcripts.push({
         seqNo: segment.seqNo,
         startMs: segment.startMs,
@@ -343,7 +342,7 @@ test("Phase 6: Complete pipeline - audio to final transcript", { timeout: 10000 
     console.log(`✅ Transcribed ${transcripts.length} segments`)
   } finally {
     globalThis.fetch = originalFetch
-    process.env.OPENAI_API_KEY = originalKey
+    delete process.env.OPENAI_API_KEY
   }
   
   // PHASE 3: Assembly

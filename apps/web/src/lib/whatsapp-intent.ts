@@ -2,12 +2,8 @@ import type { ClinicalConsultationResult, PatientSession, PrescriptionItem } fro
 
 export function formatWhatsAppPhone(rawPhone: string): string {
   const digits = rawPhone.replace(/\D/g, "")
-  if (!digits) return ""
-  // Default 10-digit Indian mobile numbers to +91
-  if (digits.length === 10) {
-    return `91${digits}`
-  }
-  return digits
+  if (digits.length === 10) return `91${digits}`
+  return digits.length >= 8 && digits.length <= 15 ? digits : ""
 }
 
 function formatScheduleSlots(item: PrescriptionItem): string {
@@ -16,7 +12,7 @@ function formatScheduleSlots(item: PrescriptionItem): string {
   if (item.schedule.afternoon) slots.push("Afternoon")
   if (item.schedule.evening) slots.push("Evening")
   if (item.schedule.night) slots.push("Night")
-  return slots.length > 0 ? slots.join(" • ") : "As directed"
+  return slots.join(" • ")
 }
 
 export function buildWhatsAppSummaryText(
@@ -28,60 +24,47 @@ export function buildWhatsAppSummaryText(
     month: "short",
     year: "numeric",
   })
-
   const lines: string[] = [
-    `*Vaidhya AI — Consultation Summary*`,
+    "*Vaidhya AI — Consultation Summary (Draft)*",
     `Patient: *${patient.patientName}*`,
     `Date: ${dateStr}`,
     "",
   ]
 
-  if (consultation.chief_complaint) {
-    lines.push(`*Chief Complaint:* ${consultation.chief_complaint}`)
-  }
-
-  if (consultation.clinical_findings) {
-    lines.push(`*Assessment / Findings:* ${consultation.clinical_findings}`)
-  }
-
-  if (consultation.medical_notes) {
-    lines.push("", `*Medical Notes & Course:*`, consultation.medical_notes)
-  }
+  if (consultation.chief_complaint) lines.push(`*Chief Complaint:* ${consultation.chief_complaint}`)
+  if (consultation.clinical_findings) lines.push(`*Assessment / Findings:* ${consultation.clinical_findings}`)
+  if (consultation.medical_notes) lines.push("", "*Medical Notes & Course:*", consultation.medical_notes)
 
   if (consultation.prescriptions.length > 0) {
-    lines.push("", `*Prescription (By Time of Day):*`)
+    lines.push("", "*Prescription (Draft):*")
     consultation.prescriptions.forEach((rx, idx) => {
       const timing = formatScheduleSlots(rx)
       const details = [rx.dosage, timing, rx.mealTiming, rx.duration ? `for ${rx.duration}` : ""]
         .filter(Boolean)
         .join(" | ")
-      lines.push(`${idx + 1}. *${rx.medicine}* — ${details}`)
-      if (rx.notes) {
-        lines.push(`   _${rx.notes}_`)
-      }
+      lines.push(`${idx + 1}. *${rx.medicine}* — ${details || "Timing/dosage not specified in the transcript"}`)
+      if (rx.notes) lines.push(`   _${rx.notes}_`)
     })
   }
 
   if (consultation.what_to_take.length > 0) {
-    lines.push("", `*What To Take / Do:*`)
+    lines.push("", "*What To Take / Do:*")
     consultation.what_to_take.forEach((item) => lines.push(`✅ ${item}`))
   }
-
   if (consultation.what_not_to_take.length > 0) {
-    lines.push("", `*What NOT To Take / Avoid:*`)
+    lines.push("", "*What NOT To Take / Avoid:*")
     consultation.what_not_to_take.forEach((item) => lines.push(`⛔ ${item}`))
   }
-
-  if (consultation.follow_up) {
-    lines.push("", `*Follow-Up:* ${consultation.follow_up}`)
-  }
-
+  if (consultation.follow_up) lines.push("", `*Follow-Up:* ${consultation.follow_up}`)
   if (consultation.red_flags.length > 0) {
-    lines.push("", `*Seek Urgent Care If:*`)
+    lines.push("", "*Warning signs mentioned during the consultation:*")
     consultation.red_flags.forEach((item) => lines.push(`⚠️ ${item}`))
   }
 
-  lines.push("", `_Consultation audio recording is available from Vaidhya AI._`)
+  lines.push(
+    "",
+    "_AI-generated draft. Verify it against the clinician's approved advice. This message is prefilled only; review and send it yourself in WhatsApp._",
+  )
   return lines.join("\n")
 }
 

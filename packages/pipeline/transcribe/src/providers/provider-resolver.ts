@@ -1,4 +1,4 @@
-import { DEFAULT_GNANI_MODEL, transcribeWithGnani } from "./gnani-transcriber"
+import { DEFAULT_GNANI_MODEL, transcribeWithGnani, type GnaniTranscribeOptions } from "./gnani-transcriber"
 import { transcribeWithNvidiaParakeet, type DiarizedUtterance } from "./nvidia-parakeet-transcriber"
 
 export type TranscriptionProvider = "gnani" | "nvidia_parakeet"
@@ -13,6 +13,8 @@ export interface TranscriptionOutput {
   provider: TranscriptionProvider
   model: string
   detectedLanguageCode?: string
+  requestId?: string
+  processingTime?: number
   truncated?: boolean
   diarizedSegments?: DiarizedUtterance[]
 }
@@ -21,7 +23,12 @@ export interface TranscribeAudioOptions {
   languageCode?: string
   previousText?: string
   topic?: string
+  format?: GnaniTranscribeOptions["format"]
+  speakerNames?: string[]
+  keyterms?: string[]
+  requestId?: string
   mimeType?: string
+  fetchFn?: typeof fetch
 }
 
 function normalizeProvider(rawProvider: string | undefined): string {
@@ -68,7 +75,12 @@ export async function transcribeWithResolvedProvider(
     languageCode: options.languageCode,
     previousText: options.previousText,
     topic: options.topic,
+    format: options.format,
+    speakerNames: options.speakerNames,
+    keyterms: options.keyterms,
+    requestId: options.requestId,
     mimeType: options.mimeType,
+    fetchFn: options.fetchFn,
   })
 
   return {
@@ -76,6 +88,8 @@ export async function transcribeWithResolvedProvider(
     provider: "gnani",
     model: result.model,
     detectedLanguageCode: result.detectedLanguageCode,
+    requestId: result.requestId,
+    processingTime: result.processingTime,
     truncated: result.truncated,
   }
 }

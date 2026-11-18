@@ -8,7 +8,7 @@ export interface PatientSession {
 }
 
 export interface DiarizedTurn {
-  speaker: "Clinician" | "Patient"
+  speaker: "Clinician" | "Patient" | "Unknown"
   text: string
 }
 

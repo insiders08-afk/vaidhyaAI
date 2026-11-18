@@ -81,6 +81,17 @@ function sanitizeContextText(raw: string, maxLength: number): string {
   return raw.replace(/<\||\|>/g, " ").trim().slice(-maxLength)
 }
 
+function sanitizeStringList(values: string[], maxItems: number, maxItemLength: number): string[] {
+  return Array.from(
+    new Set(
+      values
+        .filter((value): value is string => typeof value === "string")
+        .map((value) => value.replace(/[\r\n\0]/g, " ").trim().slice(0, maxItemLength))
+        .filter(Boolean),
+    ),
+  ).slice(0, maxItems)
+}
+
 function extractGnaniErrorMessage(body: GnaniErrorBody | null, status: number): {
   code: string
   message: string
@@ -138,7 +149,16 @@ export async function transcribeWithGnani(
   const apiKey = (options.apiKey || process.env.GNANI_API_KEY || "").trim()
   const model = (options.model || process.env.GNANI_STT_MODEL || DEFAULT_GNANI_MODEL).trim()
   const languageCode = (options.languageCode || process.env.GNANI_LANGUAGE_CODE || DEFAULT_GNANI_LANGUAGE).trim()
-  const format = options.format || "transcribe"
+  const requestedFormat = (options.format || process.env.GNANI_STT_FORMAT || "transcribe").trim().toLowerCase()
+  const allowedFormats = ["verbatim", "transcribe", "codemix", "transliterate"] as const
+  if (!allowedFormats.includes(requestedFormat as (typeof allowedFormats)[number])) {
+    throw new PipelineStageError(
+      "configuration_error",
+      "GNANI_STT_FORMAT must be verbatim, transcribe, codemix, or transliterate.",
+      false,
+    )
+  }
+  const format = requestedFormat as NonNullable<GnaniTranscribeOptions["format"]>
   const fetchImpl = options.fetchFn || fetch
 
   validateHttpsUrl(apiUrl, "Gnani Vachana STT API")
@@ -166,23 +186,19 @@ export async function transcribeWithGnani(
   formData.append("format", format)
 
   if (model === "prisma-v3.0") {
-    const topic = options.topic ?? "Outpatient medical consultation between a doctor and a patient"
-    if (topic.trim()) {
-      formData.append("topic", sanitizeContextText(topic, 1600))
-    }
+    const topic = options.topic ?? process.env.GNANI_STT_TOPIC ?? "Outpatient medical consultation"
+    if (topic.trim()) formData.append("topic", sanitizeContextText(topic, 1600))
 
-    const speakerNames = options.speakerNames ?? ["Doctor", "Patient"]
-    if (speakerNames.length > 0) {
-      formData.append("speaker_names", JSON.stringify(speakerNames.slice(0, 4)))
-    }
+    // Prisma speaker_names are actual names likely to be spoken, not generic roles.
+    const speakerNames = sanitizeStringList(options.speakerNames ?? [], 4, 120)
+    if (speakerNames.length > 0) formData.append("speaker_names", JSON.stringify(speakerNames))
 
     if (options.previousText && options.previousText.trim().length > 0) {
       formData.append("previous_text", sanitizeContextText(options.previousText, 600))
     }
 
-    if (options.keyterms && options.keyterms.length > 0) {
-      formData.append("keyterms", JSON.stringify(options.keyterms.slice(0, 200)))
-    }
+    const keyterms = sanitizeStringList(options.keyterms ?? [], 200, 160)
+    if (keyterms.length > 0) formData.append("keyterms", JSON.stringify(keyterms))
   }
 
   const headers: Record<string, string> = {

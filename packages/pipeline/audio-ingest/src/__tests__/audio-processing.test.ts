@@ -16,22 +16,22 @@ test("StreamingResampler accumulates until enough samples are available", () => 
   const secondChunk = Float32Array.from({ length: 200 }, (_, i) => (i + 2) / 200)
 
   const firstOutput = resampler.process(firstChunk)
-  assert.equal(firstOutput.length, 0, "Initial chunk should not emit output when insufficient samples")
+  assert.equal(firstOutput.length, 1, "Two source samples are enough to interpolate the first target sample")
 
   const secondOutput = resampler.process(secondChunk)
-  const expectedLength = Math.floor((firstChunk.length + secondChunk.length) / 3)
-  assert.equal(secondOutput.length, expectedLength, "Output length should follow the resampling ratio (48k->16k)")
+  const flushRemainder = resampler.flush()
+  const expectedLength = Math.ceil((firstChunk.length + secondChunk.length) / 3)
+  assert.equal(
+    firstOutput.length + secondOutput.length + flushRemainder.length,
+    expectedLength,
+    "Processed and flushed samples should preserve the expected 48k->16k output count",
+  )
   assert.ok(
     secondOutput[1] > secondOutput[0],
     "Resampled output should preserve the general shape of the input ramp",
   )
 
-  const flushRemainder = resampler.flush()
-  assert.equal(
-    flushRemainder.length,
-    (firstChunk.length + secondChunk.length) % 3,
-    "Flush should emit the fractional leftover samples",
-  )
+  assert.equal(resampler.flush().length, 0, "Flush should reset the resampler after the final target samples")
 })
 
 test("SampleBuffer with drainSegments enforces overlaps correctly", () => {
@@ -99,4 +99,26 @@ test("audio-ingest normalizes recorder failures to shared pipeline error shape",
   assert.equal(error.code, "capture_error")
   assert.equal(error.message, "Microphone denied")
   assert.equal(error.recoverable, true)
+})
+
+
+test("StreamingResampler output is independent of input callback boundaries", () => {
+  const input = Float32Array.from({ length: 4417 }, (_, index) => Math.sin(index / 13))
+  const single = new StreamingResampler(44100, TARGET_SAMPLE_RATE)
+  const singleOutput = [...single.process(input), ...single.flush()]
+
+  const chunked = new StreamingResampler(44100, TARGET_SAMPLE_RATE)
+  const chunkedOutput: number[] = []
+  for (let offset = 0; offset < input.length; offset += 257) {
+    chunkedOutput.push(...chunked.process(input.subarray(offset, Math.min(offset + 257, input.length))))
+  }
+  chunkedOutput.push(...chunked.flush())
+
+  assert.equal(chunkedOutput.length, singleOutput.length)
+  for (let index = 0; index < singleOutput.length; index += 1) {
+    assert.ok(
+      Math.abs(chunkedOutput[index] - singleOutput[index]) < 1e-6,
+      `Sample ${index} changed when source audio was split across callbacks`,
+    )
+  }
 })

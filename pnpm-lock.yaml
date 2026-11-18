@@ -130,9 +130,6 @@ importers:
       embla-carousel-react:
         specifier: 8.5.1
         version: 8.5.1(react@19.2.0)
-      get-port:
-        specifier: 5.1.1
-        version: 5.1.1
       input-otp:
         specifier: 1.4.1
         version: 1.4.1(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
@@ -200,24 +197,6 @@ importers:
       '@types/react-dom':
         specifier: ^19
         version: 19.0.0
-      asar:
-        specifier: ^3.2.0
-        version: 3.2.0
-      concurrently:
-        specifier: ^9.2.1
-        version: 9.2.1
-      cross-env:
-        specifier: ^10.1.0
-        version: 10.1.0
-      electron:
-        specifier: ^39.2.5
-        version: 39.2.5
-      electron-builder:
-        specifier: ^26.8.1
-        version: 26.8.1(electron-builder-squirrel-windows@26.8.1)
-      electron-builder-squirrel-windows:
-        specifier: 26.8.1
-        version: 26.8.1(dmg-builder@26.8.1)
       eslint:
         specifier: ^9.13.0
         version: 9.39.1(jiti@2.6.1)
@@ -230,12 +209,6 @@ importers:
       eslint-plugin-unicorn:
         specifier: ^54.0.0
         version: 54.0.0(eslint@9.39.1(jiti@2.6.1))
-      ffmpeg-static:
-        specifier: ^5.3.0
-        version: 5.3.0
-      fs-extra:
-        specifier: ^11.3.2
-        version: 11.3.2
       postcss:
         specifier: ^8.5
         version: 8.5.10
@@ -251,12 +224,8 @@ importers:
       typescript-eslint:
         specifier: ^8.10.0
         version: 8.48.1(eslint@9.39.1(jiti@2.6.1))(typescript@5.9.3)
-      wait-on:
-        specifier: ^9.0.4
-        version: 9.0.4
 
 packages:
-
   7zip-bin@5.2.0:
     resolution: {integrity: sha512-ukTPVhqG4jNzMro2qA9HSCSSVJN3aN7tlb+hfqYCt3ER0yWroeA2VR38MNrOHLQ/cVj+DaIMad0kFCtWWowh/A==}
 

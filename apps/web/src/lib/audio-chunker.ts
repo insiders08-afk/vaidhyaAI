@@ -11,7 +11,6 @@ import { useCallback, useEffect, useRef, useState } from "react"
 /** Gnani REST /stt/v3 allows max 30 seconds per request. We use 24s chunks for headroom. */
 export const GNANI_CHUNK_SECONDS = 24
 const CHUNK_MS = GNANI_CHUNK_SECONDS * 1000
-const MIN_FINAL_CHUNK_SAMPLES = Math.round(0.25 * TARGET_SAMPLE_RATE)
 
 export interface AudioChunk {
   seqNo: number
@@ -62,7 +61,7 @@ export async function sliceAudioFileToWavChunks(
     while (offset < full16k.length) {
       const end = Math.min(offset + samplesPerChunk, full16k.length)
       const slice = full16k.subarray(offset, end)
-      if (slice.length >= MIN_FINAL_CHUNK_SAMPLES || chunks.length === 0) {
+      if (slice.length > 0) {
         chunks.push({
           seqNo,
           blob: createWavBlob(slice, TARGET_SAMPLE_RATE),
@@ -256,11 +255,14 @@ export function useConsultationRecorder({ onChunkReady }: UseConsultationRecorde
     setIsRecording(false)
     setIsPaused(false)
 
-    // Flush any remaining resampled tail audio so nothing at the end is lost
-    const remaining = chunkBufferRef.current.drain()
-    if (remaining.length >= MIN_FINAL_CHUNK_SAMPLES) {
-      emitSamples(remaining)
+    // Flush the resampler into target-rate samples before draining the final chunk.
+    const resampledTail = resamplerRef.current?.flush() ?? new Float32Array(0)
+    if (resampledTail.length > 0) {
+      allSamplesRef.current.push(resampledTail)
+      chunkBufferRef.current.push(resampledTail)
     }
+    const remaining = chunkBufferRef.current.drain()
+    if (remaining.length > 0) emitSamples(remaining)
 
     const allChunks = allSamplesRef.current
     const totalSamples = allChunks.reduce((sum, item) => sum + item.length, 0)

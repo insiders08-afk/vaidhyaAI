@@ -31,13 +31,20 @@ interface TranscribeApiResponse {
   transcript?: string
   detectedLanguageCode?: string
   diarizedSegments?: Array<{ speaker?: string; text?: string }>
-  error?: { message?: string }
+  error?: { code?: string; message?: string; recoverable?: boolean }
 }
 
 interface GenerateNotesApiResponse {
   ok: boolean
   consultation?: ClinicalConsultationResult
   error?: string
+}
+
+class TranscriptionRequestError extends Error {
+  constructor(message: string, readonly recoverable: boolean) {
+    super(message)
+    this.name = "TranscriptionRequestError"
+  }
 }
 
 function formatTimer(totalSeconds: number): string {
@@ -63,9 +70,13 @@ function RecordWorkspace() {
   const [error, setError] = useState<string | null>(null)
 
   const queueRef = useRef<Promise<void>>(Promise.resolve())
-  const accumulatedTranscriptsRef = useRef<string[]>([])
+  const transcriptsBySeqRef = useRef<Map<number, string>>(new Map())
+  const pendingChunksRef = useRef<Map<number, AudioChunk>>(new Map())
+  const completedChunksRef = useRef<Set<number>>(new Set())
+  const blockedAfterFailureRef = useRef(false)
   const detectedLangRef = useRef<string | undefined>(undefined)
   const diarizedSegmentsRef = useRef<Array<{ speaker?: string; text?: string }>>([])
+  const diarizedSegmentsBySeqRef = useRef<Map<number, Array<{ speaker?: string; text?: string }>>>(new Map())
   const patientRef = useRef<PatientSession | null>(null)
   const hasAutoStartedRef = useRef(false)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
@@ -74,57 +85,96 @@ function RecordWorkspace() {
     patientRef.current = patient
   }, [patient])
 
-  const sendChunkToGnani = useCallback(async (chunk: AudioChunk, activePatient: PatientSession | null) => {
-    const previousText = accumulatedTranscriptsRef.current.join(" ").slice(-600)
-    const formData = new FormData()
-    formData.append("audio_file", chunk.blob, `chunk-${chunk.seqNo}.wav`)
-    formData.append("seq_no", String(chunk.seqNo))
-    formData.append("language_code", activePatient?.languageCode || "indic-auto")
-    if (previousText) {
-      formData.append("previous_text", previousText)
-    }
+  const sendChunkToGnani = useCallback(
+    async (chunk: AudioChunk, activePatient: PatientSession | null) => {
+      const previousText = [...transcriptsBySeqRef.current.entries()]
+        .filter(([seqNo]) => seqNo < chunk.seqNo)
+        .sort(([left], [right]) => left - right)
+        .map(([, transcript]) => transcript)
+        .filter(Boolean)
+        .join(" ")
+        .slice(-600)
 
-    const response = await fetch("/api/transcribe", {
-      method: "POST",
-      body: formData,
-    })
+      const formData = new FormData()
+      formData.append("audio_file", chunk.blob, `chunk-${chunk.seqNo}.wav`)
+      formData.append("seq_no", String(chunk.seqNo))
+      formData.append("language_code", activePatient?.languageCode || "indic-auto")
+      formData.append("request_id", crypto.randomUUID())
+      if (previousText) formData.append("previous_text", previousText)
 
-    const data = (await response.json()) as TranscribeApiResponse
-    if (!response.ok || !data.ok) {
-      throw new Error(data.error?.message || `Chunk ${chunk.seqNo + 1} transcription failed`)
-    }
+      let lastError: unknown
+      for (let attempt = 1; attempt <= 3; attempt += 1) {
+        try {
+          const response = await fetch("/api/transcribe", { method: "POST", body: formData })
+          const data = (await response.json()) as TranscribeApiResponse
 
-    if (data.detectedLanguageCode && !detectedLangRef.current) {
-      detectedLangRef.current = data.detectedLanguageCode
-      setDetectedLang(data.detectedLanguageCode)
-    }
+          if (!response.ok || !data.ok) {
+            const recoverable = data.error?.recoverable ?? (response.status === 429 || response.status >= 500)
+            throw new TranscriptionRequestError(
+              data.error?.message || `Chunk ${chunk.seqNo + 1} transcription failed`,
+              recoverable,
+            )
+          }
 
-    if (Array.isArray(data.diarizedSegments) && data.diarizedSegments.length > 0) {
-      diarizedSegmentsRef.current = [...diarizedSegmentsRef.current, ...data.diarizedSegments]
-    }
+          if (data.detectedLanguageCode && !detectedLangRef.current) {
+            detectedLangRef.current = data.detectedLanguageCode
+            setDetectedLang(data.detectedLanguageCode)
+          }
+          if (Array.isArray(data.diarizedSegments)) {
+            diarizedSegmentsBySeqRef.current.set(chunk.seqNo, data.diarizedSegments)
+            diarizedSegmentsRef.current = [...diarizedSegmentsBySeqRef.current.entries()]
+              .sort(([left], [right]) => left - right)
+              .flatMap(([, segments]) => segments)
+          }
 
-    const text = (data.transcript || "").trim()
-    if (text) {
-      accumulatedTranscriptsRef.current = [...accumulatedTranscriptsRef.current, text]
-      setChunkTranscripts([...accumulatedTranscriptsRef.current])
+          transcriptsBySeqRef.current.set(chunk.seqNo, (data.transcript || "").trim())
+          completedChunksRef.current.add(chunk.seqNo)
+          setChunkTranscripts(
+            [...transcriptsBySeqRef.current.entries()]
+              .sort(([left], [right]) => left - right)
+              .map(([, transcript]) => transcript)
+              .filter(Boolean),
+          )
+          return
+        } catch (error) {
+          lastError = error
+          if (error instanceof TranscriptionRequestError && !error.recoverable) throw error
+          if (attempt < 3) await new Promise((resolve) => setTimeout(resolve, 400 * attempt))
+        }
+      }
+
+      throw lastError instanceof Error ? lastError : new Error("Transcription failed after three attempts.")
+    },
+    [],
+  )
+
+  const drainPendingChunks = useCallback(async () => {
+    if (blockedAfterFailureRef.current) return
+    const pending = [...pendingChunksRef.current.values()].sort((left, right) => left.seqNo - right.seqNo)
+    for (const chunk of pending) {
+      if (blockedAfterFailureRef.current) return
+      try {
+        setStatusMessage(`Transcribing audio segment ${chunk.seqNo + 1}...`)
+        await sendChunkToGnani(chunk, patientRef.current)
+        pendingChunksRef.current.delete(chunk.seqNo)
+        setStatusMessage("Recording live — listening...")
+      } catch (err) {
+        blockedAfterFailureRef.current = true
+        setError(err instanceof Error ? err.message : "Audio chunk transcription failed.")
+        setStatusMessage("A segment needs retry before notes can be generated.")
+        return
+      }
     }
-  }, [])
+  }, [sendChunkToGnani]);
 
   const handleChunkReady = useCallback(
     (chunk: AudioChunk) => {
-      // Serialize chunk uploads so `previous_text` stays ordered and Gnani concurrency limits are respected
-      queueRef.current = queueRef.current
-        .then(async () => {
-          setStatusMessage(`Transcribing live audio segment ${chunk.seqNo + 1}...`)
-          await sendChunkToGnani(chunk, patientRef.current)
-          setStatusMessage("Recording live — listening...")
-        })
-        .catch((err) => {
-          console.error("[record] chunk upload failed:", err)
-          setError(err instanceof Error ? err.message : "Audio chunk transcription failed.")
-        })
+      // Ignore duplicate callbacks after a chunk is pending or complete.
+      if (completedChunksRef.current.has(chunk.seqNo) || pendingChunksRef.current.has(chunk.seqNo)) return
+      pendingChunksRef.current.set(chunk.seqNo, chunk)
+      queueRef.current = queueRef.current.then(drainPendingChunks, drainPendingChunks)
     },
-    [sendChunkToGnani],
+    [drainPendingChunks],
   )
 
   const {
@@ -138,6 +188,37 @@ function RecordWorkspace() {
     resumeRecording,
     stopRecording,
   } = useConsultationRecorder({ onChunkReady: handleChunkReady })
+
+  const resetTranscriptionState = useCallback(() => {
+    queueRef.current = Promise.resolve()
+    transcriptsBySeqRef.current.clear()
+    pendingChunksRef.current.clear()
+    completedChunksRef.current.clear()
+    blockedAfterFailureRef.current = false
+    detectedLangRef.current = undefined
+    diarizedSegmentsRef.current = []
+    diarizedSegmentsBySeqRef.current.clear()
+    setChunkTranscripts([])
+    setDetectedLang(undefined)
+    setError(null)
+  }, [])
+
+  const beginRecording = useCallback(async () => {
+    resetTranscriptionState()
+    await startRecording()
+  }, [resetTranscriptionState, startRecording])
+
+  async function retryPendingChunks(activePatient: PatientSession | null) {
+    blockedAfterFailureRef.current = false
+    const pending = [...pendingChunksRef.current.values()].sort((left, right) => left.seqNo - right.seqNo)
+    for (const chunk of pending) {
+      setStatusMessage(`Retrying audio segment ${chunk.seqNo + 1}...`)
+      await sendChunkToGnani(chunk, activePatient)
+      pendingChunksRef.current.delete(chunk.seqNo)
+    }
+    blockedAfterFailureRef.current = false
+    setError(null)
+  }
 
   useEffect(() => {
     let active = true
@@ -153,7 +234,7 @@ function RecordWorkspace() {
 
         if (autostart && !initialUploadMode && !hasAutoStartedRef.current) {
           hasAutoStartedRef.current = true
-          startRecording()
+          beginRecording()
             .then(() => {
               setStatusMessage("Recording live — listening...")
             })
@@ -167,7 +248,7 @@ function RecordWorkspace() {
     return () => {
       active = false
     }
-  }, [autostart, initialUploadMode, router, startRecording])
+  }, [autostart, initialUploadMode, router, beginRecording])
 
   async function finalizeAndGenerateNotes(
     audioBlob: Blob,
@@ -180,14 +261,19 @@ function RecordWorkspace() {
       return
     }
 
-    const fullTranscript = accumulatedTranscriptsRef.current.join(" ").trim()
+    const fullTranscript = [...transcriptsBySeqRef.current.entries()]
+      .sort(([left], [right]) => left - right)
+      .map(([, transcript]) => transcript)
+      .filter(Boolean)
+      .join(" ")
+      .trim()
     if (!fullTranscript) {
       setError("No speech was detected in the consultation audio. Please try again.")
       setIsProcessing(false)
       return
     }
 
-    setStatusMessage("Separating Doctor & Patient voices and generating medical notes & prescription...")
+    setStatusMessage("Generating draft clinical notes for review...")
     await saveConsultationAudioBlob(audioBlob)
 
     const response = await fetch("/api/generate-notes", {
@@ -228,6 +314,9 @@ function RecordWorkspace() {
     try {
       const fullWavBlob = await stopRecording()
       await queueRef.current
+      if (pendingChunksRef.current.size > 0) {
+        await retryPendingChunks(patientRef.current)
+      }
 
       if (!fullWavBlob) {
         setError("No audio was recorded. Please record again or upload an audio file.")
@@ -246,10 +335,7 @@ function RecordWorkspace() {
   async function handleFileSelected(file: File) {
     setError(null)
     setIsProcessing(true)
-    accumulatedTranscriptsRef.current = []
-    diarizedSegmentsRef.current = []
-    detectedLangRef.current = undefined
-    setChunkTranscripts([])
+    resetTranscriptionState()
 
     try {
       setStatusMessage(`Decoding ${file.name}...`)
@@ -383,7 +469,7 @@ function RecordWorkspace() {
                   type="button"
                   onClick={() => {
                     setError(null)
-                    void startRecording().then(() => setStatusMessage("Recording live — listening..."))
+                    void beginRecording().then(() => setStatusMessage("Recording live — listening..."))
                   }}
                   className="flex w-full max-w-xs items-center justify-center gap-2 rounded-xl bg-teal-700 px-6 py-4 text-base font-semibold text-white shadow-sm transition hover:bg-teal-800"
                 >

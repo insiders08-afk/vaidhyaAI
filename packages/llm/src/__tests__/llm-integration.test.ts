@@ -10,9 +10,11 @@ import { runLLMRequest } from "../index.js"
  * critical errors like API incompatibilities, response parsing issues, etc.
  */
 
-test("runLLMRequest throws when ANTHROPIC_API_KEY is missing", async () => {
-  const originalKey = process.env.ANTHROPIC_API_KEY
-  delete process.env.ANTHROPIC_API_KEY
+test("runLLMRequest throws when OPENAI_API_KEY and LLM_API_KEY are missing", async () => {
+  const originalOpenAIKey = process.env.OPENAI_API_KEY
+  const originalLlmKey = process.env.LLM_API_KEY
+  delete process.env.OPENAI_API_KEY
+  delete process.env.LLM_API_KEY
 
   try {
     await assert.rejects(
@@ -23,22 +25,23 @@ test("runLLMRequest throws when ANTHROPIC_API_KEY is missing", async () => {
         })
       },
       {
-        message: /ANTHROPIC_API_KEY.*required/i,
+        message: /Missing OPENAI_API_KEY/i,
       },
       "Should throw error when API key is missing"
     )
   } finally {
     // Restore the original key
-    if (originalKey) {
-      process.env.ANTHROPIC_API_KEY = originalKey
-    }
+    if (originalOpenAIKey === undefined) delete process.env.OPENAI_API_KEY
+    else process.env.OPENAI_API_KEY = originalOpenAIKey
+    if (originalLlmKey === undefined) delete process.env.LLM_API_KEY
+    else process.env.LLM_API_KEY = originalLlmKey
   }
 })
 
 test("runLLMRequest requires system and prompt parameters", async () => {
   // Skip if no API key (don't want to fail on CI without secrets)
-  if (!process.env.ANTHROPIC_API_KEY) {
-    console.log("⚠️  Skipping test - ANTHROPIC_API_KEY not set")
+  if (!process.env.OPENAI_API_KEY && !process.env.LLM_API_KEY) {
+    console.log("⚠️  Skipping test - OPENAI_API_KEY/LLM_API_KEY not set")
     return
   }
 
@@ -54,15 +57,15 @@ test("runLLMRequest requires system and prompt parameters", async () => {
 
 test("runLLMRequest returns string response for simple prompts", async () => {
   // Skip if no API key
-  if (!process.env.ANTHROPIC_API_KEY) {
-    console.log("⚠️  Skipping live API test - ANTHROPIC_API_KEY not set")
+  if (!process.env.OPENAI_API_KEY && !process.env.LLM_API_KEY) {
+    console.log("⚠️  Skipping live API test - OPENAI_API_KEY/LLM_API_KEY not set")
     return
   }
 
   const response = await runLLMRequest({
     system: "You are a helpful assistant. Respond with exactly one word.",
     prompt: "Say 'hello'",
-    model: "claude-3-haiku-20240307", // Use cheaper model for tests
+    model: "gpt-4o-mini", // Use cheaper model for tests
   })
 
   assert.equal(typeof response, "string", "Response should be a string")
@@ -70,10 +73,10 @@ test("runLLMRequest returns string response for simple prompts", async () => {
   assert.ok(response.toLowerCase().includes("hello"), "Response should contain 'hello'")
 })
 
-test("runLLMRequest with jsonSchema returns valid JSON", async () => {
+test("runLLMRequest with JSON response format returns valid JSON", async () => {
   // Skip if no API key
-  if (!process.env.ANTHROPIC_API_KEY) {
-    console.log("⚠️  Skipping live API test - ANTHROPIC_API_KEY not set")
+  if (!process.env.OPENAI_API_KEY && !process.env.LLM_API_KEY) {
+    console.log("⚠️  Skipping live API test - OPENAI_API_KEY/LLM_API_KEY not set")
     return
   }
 
@@ -89,11 +92,8 @@ test("runLLMRequest with jsonSchema returns valid JSON", async () => {
   const response = await runLLMRequest({
     system: "You are a data generator. Generate test data following the schema.",
     prompt: "Generate a person with name 'Alice' and age 30",
-    model: "claude-3-haiku-20240307",
-    jsonSchema: {
-      name: "PersonData",
-      schema,
-    },
+    model: "gpt-4o-mini",
+    responseFormat: "json_object",
   })
 
   // Response should be valid JSON
@@ -108,10 +108,10 @@ test("runLLMRequest with jsonSchema returns valid JSON", async () => {
   assert.ok(typeof parsed.name === "string" && parsed.name.length > 0, "name should not be empty")
 })
 
-test("runLLMRequest with jsonSchema enforces schema structure", async () => {
+test("runLLMRequest with JSON response format returns requested fields", async () => {
   // Skip if no API key
-  if (!process.env.ANTHROPIC_API_KEY) {
-    console.log("⚠️  Skipping live API test - ANTHROPIC_API_KEY not set")
+  if (!process.env.OPENAI_API_KEY && !process.env.LLM_API_KEY) {
+    console.log("⚠️  Skipping live API test - OPENAI_API_KEY/LLM_API_KEY not set")
     return
   }
 
@@ -129,11 +129,8 @@ test("runLLMRequest with jsonSchema enforces schema structure", async () => {
   const response = await runLLMRequest({
     system: "Generate structured data.",
     prompt: "Generate data with three fields: field_a, field_b, field_c",
-    model: "claude-3-haiku-20240307",
-    jsonSchema: {
-      name: "TestData",
-      schema,
-    },
+    model: "gpt-4o-mini",
+    responseFormat: "json_object",
   })
 
   const parsed = JSON.parse(response)
@@ -151,8 +148,8 @@ test("runLLMRequest with jsonSchema enforces schema structure", async () => {
 
 test("runLLMRequest handles errors gracefully", async () => {
   // Skip if no API key
-  if (!process.env.ANTHROPIC_API_KEY) {
-    console.log("⚠️  Skipping live API test - ANTHROPIC_API_KEY not set")
+  if (!process.env.OPENAI_API_KEY && !process.env.LLM_API_KEY) {
+    console.log("⚠️  Skipping live API test - OPENAI_API_KEY/LLM_API_KEY not set")
     return
   }
 
@@ -172,8 +169,8 @@ test("runLLMRequest handles errors gracefully", async () => {
 
 test("runLLMRequest enforces HTTPS for HIPAA compliance", async () => {
   // Skip if no API key
-  if (!process.env.ANTHROPIC_API_KEY) {
-    console.log("⚠️  Skipping HTTPS test - ANTHROPIC_API_KEY not set")
+  if (!process.env.OPENAI_API_KEY && !process.env.LLM_API_KEY) {
+    console.log("⚠️  Skipping HTTPS test - OPENAI_API_KEY/LLM_API_KEY not set")
     return
   }
 
@@ -182,7 +179,7 @@ test("runLLMRequest enforces HTTPS for HIPAA compliance", async () => {
   const response = await runLLMRequest({
     system: "You are a test assistant.",
     prompt: "Say 'test'",
-    model: "claude-3-haiku-20240307",
+    model: "gpt-4o-mini",
   })
 
   // If we get a response, it means HTTPS validation passed

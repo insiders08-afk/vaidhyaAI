@@ -6,6 +6,7 @@ export const MIN_FINAL_SEGMENT_MS = 8000
 export class StreamingResampler {
   private readonly ratio: number
   private buffer: Float32Array
+  private nextOutputPosition = 0
 
   constructor(private readonly sourceRate: number, private readonly targetRate: number) {
     const baseRatio = sourceRate / targetRate
@@ -14,40 +15,51 @@ export class StreamingResampler {
   }
 
   process(input: Float32Array): Float32Array {
-    if (input.length === 0) {
-      return new Float32Array(0)
-    }
+    if (input.length === 0) return new Float32Array(0)
+
     const combined = new Float32Array(this.buffer.length + input.length)
     combined.set(this.buffer)
     combined.set(input, this.buffer.length)
 
-    const outputLength = Math.floor(combined.length / this.ratio)
-    if (outputLength <= 0) {
-      this.buffer = combined
-      return new Float32Array(0)
-    }
+    const output: number[] = []
+    let position = this.nextOutputPosition
 
-    const output = new Float32Array(outputLength)
-    for (let i = 0; i < outputLength; i++) {
-      const index = i * this.ratio
-      const left = Math.floor(index)
+    // Preserve the fractional source position across callbacks. Resetting it
+    // to zero causes sample timing drift for non-integer ratios (44.1 -> 16 kHz).
+    while (position + 1 < combined.length) {
+      const left = Math.floor(position)
       const right = Math.min(left + 1, combined.length - 1)
-      const frac = index - left
-      const leftSample = combined[left]
-      const rightSample = combined[right]
-      output[i] = leftSample + (rightSample - leftSample) * frac
+      const fraction = position - left
+      output.push(combined[left] + (combined[right] - combined[left]) * fraction)
+      position += this.ratio
     }
 
-    const consumed = Math.floor(outputLength * this.ratio)
-    const remaining = combined.length - consumed
-    this.buffer = remaining > 0 ? combined.slice(consumed) : new Float32Array(0)
-    return output
+    // Retain a source sample for interpolation with the next callback.
+    const consumed = Math.min(Math.floor(position), combined.length - 1)
+    this.nextOutputPosition = position - consumed
+    this.buffer = combined.slice(consumed)
+    return Float32Array.from(output)
   }
 
+  /**
+   * Emit any remaining target-rate samples by interpolation. Never return
+   * raw source-rate tail samples as though they were target-rate samples.
+   */
   flush(): Float32Array {
-    const remaining = this.buffer
+    const output: number[] = []
+    let position = this.nextOutputPosition
+
+    while (this.buffer.length > 0 && position < this.buffer.length) {
+      const left = Math.floor(position)
+      const right = Math.min(left + 1, this.buffer.length - 1)
+      const fraction = position - left
+      output.push(this.buffer[left] + (this.buffer[right] - this.buffer[left]) * fraction)
+      position += this.ratio
+    }
+
     this.buffer = new Float32Array(0)
-    return remaining
+    this.nextOutputPosition = 0
+    return Float32Array.from(output)
   }
 }
 

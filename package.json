@@ -100,7 +100,10 @@
       "lodash": "4.17.23",
       "minimatch@10.1.1": "10.2.4",
       "minimatch@9.0.5": "9.0.9",
-      "minimatch@3.1.2": "3.1.4"
+      "minimatch@3.1.2": "3.1.4",
+      "app-builder-lib": "26.8.1",
+      "dmg-builder": "26.8.1",
+      "electron-builder-squirrel-windows": "26.8.1"
     }
   },
   "packageManager": "pnpm@10.23.0+sha512.21c4e5698002ade97e4efe8b8b4a89a8de3c85a37919f957e7a0f30f38fbc5bbdd05980ffe29179b2fb6e6e691242e098d945d1601772cad0fef5fb6411e2a4b"

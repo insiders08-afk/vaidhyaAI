@@ -54,6 +54,7 @@ export default function ResultsPage() {
   const [activeTab, setActiveTab] = useState<ActiveTab>("prescription")
   const [copied, setCopied] = useState(false)
   const [showTranscript, setShowTranscript] = useState(false)
+  const [reviewAcknowledged, setReviewAcknowledged] = useState(false)
 
   useEffect(() => {
     let objectUrl: string | null = null
@@ -90,11 +91,13 @@ export default function ResultsPage() {
   const { patient, result } = consultation
 
   function handleSendWhatsApp() {
+    if (!reviewAcknowledged) return
     const url = buildWhatsAppIntentUrl(patient, result)
     window.open(url, "_blank", "noopener,noreferrer")
   }
 
   async function handleCopySummary() {
+    if (!reviewAcknowledged) return
     const text = buildWhatsAppSummaryText(patient, result)
     await navigator.clipboard.writeText(text)
     setCopied(true)
@@ -139,6 +142,7 @@ export default function ResultsPage() {
       },
     }
     setConsultation(updated)
+    setReviewAcknowledged(false)
     await saveActiveConsultation(updated)
   }
 
@@ -152,6 +156,7 @@ export default function ResultsPage() {
       result: { ...consultation.result, prescriptions: updatedList },
     }
     setConsultation(updated)
+    setReviewAcknowledged(false)
     await saveActiveConsultation(updated)
   }
 
@@ -415,7 +420,7 @@ export default function ResultsPage() {
                 onClick={() => setShowTranscript((prev) => !prev)}
                 className="flex w-full items-center justify-between text-left text-sm font-semibold text-slate-900"
               >
-                <span>Speaker-Separated Conversation (Clinician vs Patient)</span>
+                <span>Transcript speaker labels (verify uncertain speakers)</span>
                 <span className="text-xs font-medium text-teal-700">{showTranscript ? "Hide" : "Show"}</span>
               </button>
 
@@ -428,7 +433,9 @@ export default function ResultsPage() {
                         className={`rounded-xl p-3 text-sm ${
                           turn.speaker === "Clinician"
                             ? "bg-teal-50/70 text-slate-900"
-                            : "bg-slate-100 text-slate-800"
+                            : turn.speaker === "Patient"
+                              ? "bg-slate-100 text-slate-800"
+                              : "bg-amber-50 text-slate-800"
                         }`}
                       >
                         <span className="mb-0.5 block text-[11px] font-bold tracking-wide text-teal-800 uppercase">
@@ -451,7 +458,7 @@ export default function ResultsPage() {
           <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs">
             <h2 className="text-base font-bold text-slate-900">Full Consultation Recording</h2>
             <p className="mt-1 text-sm text-slate-600">
-              Play, download, or share the complete consultation audio directly to the patient.
+              Play or export the original consultation recording. WhatsApp sharing prepares a text draft only; it does not send the audio.
             </p>
 
             {audioUrl ? (
@@ -483,40 +490,36 @@ export default function ResultsPage() {
         ) : null}
       </main>
 
-      {/* Sticky Bottom WhatsApp Intent Bar */}
+      {/* WhatsApp opens a prefilled draft; nothing is sent automatically. */}
       <footer className="fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white/95 px-4 py-3 backdrop-blur">
+        <div className="mx-auto mb-2 flex max-w-3xl items-start gap-2 text-xs text-slate-600">
+          <input id="review-acknowledgement" type="checkbox" checked={reviewAcknowledged}
+            onChange={(event) => setReviewAcknowledged(event.target.checked)}
+            className="mt-0.5 size-4 rounded border-slate-300 text-teal-700 focus:ring-teal-600" />
+          <label htmlFor="review-acknowledgement">
+            I have reviewed this AI-generated draft and checked medication names, doses, timings and follow-up before preparing it for sharing.
+            <span className="mt-1 block text-[11px] text-slate-500">This local acknowledgement does not authenticate a clinician or certify the record.</span>
+          </label>
+        </div>
         <div className="mx-auto flex max-w-3xl items-center gap-2.5">
-          <button
-            type="button"
-            onClick={handleSendWhatsApp}
-            className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3.5 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700 active:scale-[0.99] sm:text-base"
-          >
+          <button type="button" onClick={handleSendWhatsApp} disabled={!reviewAcknowledged}
+            className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3.5 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-600 sm:text-base">
             <MessageCircle className="size-5" />
-            <span>Send Notes &amp; Rx via WhatsApp</span>
+            <span>Open WhatsApp draft</span>
           </button>
-
           {audioBlob ? (
-            <button
-              type="button"
-              onClick={() => void handleShareAudio()}
-              title="Share consultation audio file"
-              className="flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3.5 py-3.5 text-sm font-semibold text-slate-800 hover:bg-slate-50"
-            >
+            <button type="button" onClick={() => void handleShareAudio()} title="Export consultation audio using your device share sheet"
+              className="flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3.5 py-3.5 text-sm font-semibold text-slate-800 hover:bg-slate-50">
               <Share2 className="size-4 text-teal-700" />
               <span className="hidden sm:inline">Audio</span>
             </button>
           ) : null}
-
-          <button
-            type="button"
-            onClick={() => void handleCopySummary()}
-            title="Copy summary text"
-            className="flex items-center justify-center rounded-xl border border-slate-300 bg-white p-3.5 text-slate-700 hover:bg-slate-50"
-          >
+          <button type="button" onClick={() => void handleCopySummary()} title="Copy draft summary text"
+            disabled={!reviewAcknowledged}
+            className="flex items-center justify-center rounded-xl border border-slate-300 bg-white p-3.5 text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40">
             {copied ? <Check className="size-4 text-emerald-600" /> : <ClipboardCopy className="size-4" />}
           </button>
-        </div>
-      </footer>
+        </div>      </footer>
     </div>
   )
 }
