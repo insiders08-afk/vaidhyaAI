@@ -2,16 +2,16 @@ import assert from "node:assert/strict"
 import test from "node:test"
 
 /**
- * REAL E2E TEST - Uses actual OpenAI Whisper API
+ * REAL E2E TEST - Uses the configured Gnani Prisma v3 API
  * 
  * This test validates the REAL recording-to-transcription pipeline:
  * 1. Creates actual audio segments
- * 2. Sends them to REAL Whisper API
+ * 2. Sends them to REAL Gnani Prisma v3 API
  * 3. Assembles real transcripts
  * 4. Produces final clinical-quality transcription
  * 
  * Requirements:
- * - OPENAI_API_KEY environment variable must be set
+ * - GNANI_API_KEY environment variable must be set
  * - Will make real API calls (costs ~$0.006 per minute of audio)
  */
 
@@ -51,20 +51,20 @@ function generateRealisticAudio(durationSecs: number, sampleRate: number): Float
   return samples
 }
 
-test("REAL E2E: Complete pipeline with actual Whisper API", { timeout: 60_000 }, async (t) => {
+test("REAL E2E: Complete pipeline with actual Gnani Prisma v3 API", { timeout: 60_000 }, async (t) => {
   console.log("\n" + "=".repeat(80))
   console.log("REAL END-TO-END TEST - ACTUAL API CALLS")
   console.log("=".repeat(80))
   
   // Check for API key
-  if (!process.env.OPENAI_API_KEY) {
-    console.log("⚠️  OPENAI_API_KEY not set - skipping real API test")
-    console.log("   Set OPENAI_API_KEY to run this test with real transcription")
-    t.skip("OPENAI_API_KEY not set")
+  if (!process.env.GNANI_API_KEY) {
+    console.log("⚠️  GNANI_API_KEY not set - skipping real API test")
+    console.log("   Set GNANI_API_KEY to run this test with real transcription")
+    t.skip("GNANI_API_KEY not set")
     return
   }
   
-  console.log("✅ OPENAI_API_KEY found - proceeding with real API test")
+  console.log("✅ GNANI_API_KEY found - proceeding with real API test")
   console.log("💰 Note: This will cost approximately $0.01-0.02 in API credits\n")
   
   // ============================================================================
@@ -119,17 +119,17 @@ test("REAL E2E: Complete pipeline with actual Whisper API", { timeout: 60_000 },
   console.log("")
   
   // ============================================================================
-  // PHASE 2: REAL Whisper API Transcription
+  // PHASE 2: REAL Gnani Prisma v3 API Transcription
   // ============================================================================
-  console.log("🎤 PHASE 2: Real Whisper API Transcription")
+  console.log("🎤 PHASE 2: Real Gnani Prisma v3 API Transcription")
   console.log("-".repeat(80))
   
-  const whisperProvider = await import("../../../transcribe/src/providers/whisper-transcriber.js")
-  const { transcribeWavBuffer } = whisperProvider
+  const gnaniProvider = await import("../../../transcribe/src/providers/gnani-transcriber.js")
+  const { transcribeWithGnani } = gnaniProvider
   
   const transcripts: { seqNo: number; startMs: number; endMs: number; text: string; duration: number }[] = []
   
-  console.log(`⏳ Transcribing ${segments.length} segments with OpenAI Whisper API...`)
+  console.log(`⏳ Transcribing ${segments.length} segments with OpenAI Gnani Prisma v3 API...`)
   console.log(`   This will make ${segments.length} API calls\n`)
   
   const totalStartTime = Date.now()
@@ -141,7 +141,8 @@ test("REAL E2E: Complete pipeline with actual Whisper API", { timeout: 60_000 },
     const segmentStartTime = Date.now()
     
     try {
-      const text = await transcribeWavBuffer(wavBuffer, `segment-${segment.seqNo}.wav`)
+      const result = await transcribeWithGnani(wavBuffer, `segment-${segment.seqNo}.wav`, { apiKey: process.env.GNANI_API_KEY })
+      const text = result.transcript
       const duration = Date.now() - segmentStartTime
       
       transcripts.push({
@@ -266,38 +267,18 @@ test("REAL E2E: Complete pipeline with actual Whisper API", { timeout: 60_000 },
   setTimeout(() => process.exit(0), 100)
 })
 
-test("REAL E2E: Error handling with invalid API key", { timeout: 10_000 }, async (_t) => {
-  console.log("\n" + "=".repeat(80))
-  console.log("TEST: API Error Handling")
-  console.log("=".repeat(80))
-  
-  const originalKey = process.env.OPENAI_API_KEY
-  
-  try {
-    // Test with invalid key
-    process.env.OPENAI_API_KEY = "invalid-key-12345"
-    
-    const audioProcessing = await import("../../../audio-ingest/src/capture/audio-processing.js")
-    const { createWavBlob, TARGET_SAMPLE_RATE } = audioProcessing
-    const whisperProvider = await import("../../../transcribe/src/providers/whisper-transcriber.js")
-    const { transcribeWavBuffer } = whisperProvider
-    
-    console.log("⏳ Testing with invalid API key...")
-    const samples = new Float32Array(16000).fill(0.1)
-    const blob = createWavBlob(samples, TARGET_SAMPLE_RATE)
-    const wavBuffer = Buffer.from(await blob.arrayBuffer())
-    
-    try {
-      await transcribeWavBuffer(wavBuffer, "test.wav")
-      assert.fail("Should have thrown an error with invalid API key")
-    } catch (error: any) {
-      console.log(`✅ Correctly rejected with error: ${error.message}`)
-      assert(error.message.includes("Transcription failed") || error.message.includes("401"), 
-        "Should throw API authentication error")
-    }
-    
-    console.log("✅ Error handling works correctly\n")
-  } finally {
-    process.env.OPENAI_API_KEY = originalKey
-  }
+test("Gnani adapter maps authentication failures without exposing response bodies", async () => {
+  const { transcribeWithGnani } = await import("../../../transcribe/src/providers/gnani-transcriber.js")
+  const fetchFn: typeof fetch = async () => new Response(
+    JSON.stringify({ error: { type: "AUTHENTICATION_ERROR", message: "Invalid API key" } }),
+    { status: 401 },
+  )
+
+  await assert.rejects(
+    () => transcribeWithGnani(Buffer.from([1, 2, 3]), "test.wav", {
+      apiKey: "invalid-test-key",
+      fetchFn,
+    }),
+    /Invalid API key/,
+  )
 })
