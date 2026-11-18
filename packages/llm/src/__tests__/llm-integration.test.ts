@@ -25,7 +25,7 @@ test("runLLMRequest throws when OPENAI_API_KEY and LLM_API_KEY are missing", asy
         })
       },
       {
-        message: /OPENAI_API_KEY.*required/i,
+        message: /Missing OPENAI_API_KEY/i,
       },
       "Should throw error when API key is missing"
     )
