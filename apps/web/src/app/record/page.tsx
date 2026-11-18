@@ -273,7 +273,7 @@ function RecordWorkspace() {
       return
     }
 
-    setStatusMessage("Separating Doctor & Patient voices and generating medical notes & prescription...")
+    setStatusMessage("Generating draft clinical notes for review...")
     await saveConsultationAudioBlob(audioBlob)
 
     const response = await fetch("/api/generate-notes", {
