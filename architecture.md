@@ -120,7 +120,7 @@ Do not use real patient data in the current prototype. Before any real pilot, im
 
 ## 8. Configuration and checks
 
-See [apps/web/.env.local.example](./apps/web/.env.local.example). Main configuration includes `TRANSCRIPTION_PROVIDER`, `GNANI_API_KEY`, `GNANI_STT_MODEL`, `GNANI_LANGUAGE_CODE`, `GNANI_STT_FORMAT`, `GNANI_STT_TOPIC`, `GNANI_STT_KEYTERMS`, `GNANI_STT_SPEAKER_NAMES`, and LLM credentials.
+Keep the root `pnpm.overrides` entries in `package.json` aligned with the top-level `overrides` block in `pnpm-lock.yaml`; after changing an override, regenerate the lockfile with the repository's pnpm 10 version and commit both files. See [apps/web/.env.local.example](./apps/web/.env.local.example). Main configuration includes `TRANSCRIPTION_PROVIDER`, `GNANI_API_KEY`, `GNANI_STT_MODEL`, `GNANI_LANGUAGE_CODE`, `GNANI_STT_FORMAT`, `GNANI_STT_TOPIC`, `GNANI_STT_KEYTERMS`, `GNANI_STT_SPEAKER_NAMES`, and LLM credentials.
 
 ```bash
 pnpm lint
