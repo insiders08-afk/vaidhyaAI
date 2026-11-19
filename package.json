@@ -16,8 +16,8 @@
     "test": "pnpm build:test && pnpm test:run",
     "test:run": "find build/tests-dist -name \"*.test.js\" -print0 | xargs -0 -n 1 node --test",
     "test:no-phi-logs": "node scripts/check-no-phi-logs.mjs",
-    "test:llm": "pnpm build:test && find build/tests-dist/llm/src/__tests__ -name \"*.test.js\" -print0 | xargs -0 node --test",
-    "test:note": "pnpm build:test && find build/tests-dist/pipeline/note-core/src/__tests__ -name \"*.test.js\" -print0 | xargs -0 node --test"
+    "test:llm": "pnpm build:test && find build/tests-dist/src/server/llm/__tests__ -name \"*.test.js\" -print0 | xargs -0 node --test",
+    "test:note": "pnpm build:test && find build/tests-dist/src/server/clinical-notes/__tests__ -name \"*.test.js\" -print0 | xargs -0 node --test"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.71.2",

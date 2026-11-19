@@ -48,14 +48,14 @@ const nextConfig = {
   webpack: (config) => {
     config.resolve.alias = {
       ...config.resolve.alias,
-      '@audio': path.resolve(process.cwd(), 'packages/pipeline/audio-ingest/src'),
-      '@transcription': path.resolve(process.cwd(), 'packages/pipeline/transcribe/src'),
-      '@transcript-assembly': path.resolve(process.cwd(), 'packages/pipeline/assemble/src'),
-      '@note-core': path.resolve(process.cwd(), 'packages/pipeline/note-core/src'),
+      '@audio': path.resolve(process.cwd(), 'src/features/recording'),
+      '@transcription': path.resolve(process.cwd(), 'src/server/transcription'),
+      '@transcript-assembly': path.resolve(process.cwd(), 'src/server/transcription/assembly'),
+      '@note-core': path.resolve(process.cwd(), 'src/server/clinical-notes'),
       '@note-rendering': path.resolve(process.cwd(), 'packages/pipeline/render/src'),
-      '@llm': path.resolve(process.cwd(), 'packages/llm/src'),
-      '@pipeline-errors': path.resolve(process.cwd(), 'packages/pipeline/shared/src'),
-      '@storage': path.resolve(process.cwd(), 'packages/storage/src'),
+      '@llm': path.resolve(process.cwd(), 'src/server/llm'),
+      '@pipeline-errors': path.resolve(process.cwd(), 'src/server/errors'),
+      '@storage': path.resolve(process.cwd(), 'src/lib/storage'),
       '@ui': path.resolve(process.cwd(), 'packages/ui/src'),
       '@ui/lib': path.resolve(process.cwd(), 'packages/ui/src/lib'),
     }

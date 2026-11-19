@@ -16,6 +16,7 @@ const targets = [
 const bannedPatterns = [
   { regex: /debugLogPHI\s*\(/g, reason: 'PHI debug logger is not allowed in server runtime files.' },
   { regex: /\[PHI DEBUG\]/g, reason: 'PHI debug marker is not allowed in server runtime files.' },
+  { regex: /debugLog\(\s*(?:emptyNote|normalizedMarkdown|transcript|patient_name|visit_reason)\b/g, reason: 'Clinical content must never be written to debug logs.' },
 ]
 const suspiciousPatterns = [
   /console\.log\([^\n]*(patient|transcript|note|phi)/i,

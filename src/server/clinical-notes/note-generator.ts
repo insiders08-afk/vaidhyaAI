@@ -31,11 +31,7 @@ export async function createClinicalNoteText(params: ClinicalNoteRequest): Promi
   if (!transcript || transcript.trim().length === 0) {
     debugLog("⚠️  Transcript is empty - returning empty note structure")
     const emptyNote = createEmptyMarkdownNote()
-    debugLog("=".repeat(80))
-    debugLog("-".repeat(80))
-    debugLog(emptyNote)
-    debugLog("-".repeat(80))
-    debugLog("=".repeat(80))
+    debugLog("Returning an empty clinical note draft")
     return emptyNote
   }
 
@@ -73,10 +69,7 @@ export async function createClinicalNoteText(params: ClinicalNoteRequest): Promi
     // Normalize section headings to standard format
     const normalizedMarkdown = normalizeMarkdownSections(cleanedMarkdown)
 
-    debugLog("=".repeat(80))
-    debugLog("=".repeat(80))
-    debugLog(normalizedMarkdown)
-    debugLog("=".repeat(80))
+    debugLog("Clinical note draft generated")
 
     return normalizedMarkdown
   } catch (error) {

@@ -28,28 +28,28 @@
         "./src/*"
       ],
       "@audio": [
-        "packages/pipeline/audio-ingest/src/index.ts"
+        "src/features/recording/index.ts"
       ],
       "@audio/*": [
-        "packages/pipeline/audio-ingest/src/*"
+        "src/features/recording/*"
       ],
       "@transcription": [
-        "packages/pipeline/transcribe/src/index.ts"
+        "src/server/transcription/index.ts"
       ],
       "@transcription/*": [
-        "packages/pipeline/transcribe/src/*"
+        "src/server/transcription/*"
       ],
       "@transcript-assembly": [
-        "packages/pipeline/assemble/src/index.ts"
+        "src/server/transcription/assembly/index.ts"
       ],
       "@transcript-assembly/*": [
-        "packages/pipeline/assemble/src/*"
+        "src/server/transcription/assembly/*"
       ],
       "@note-core": [
-        "packages/pipeline/note-core/src/index.ts"
+        "src/server/clinical-notes/index.ts"
       ],
       "@note-core/*": [
-        "packages/pipeline/note-core/src/*"
+        "src/server/clinical-notes/*"
       ],
       "@note-rendering": [
         "packages/pipeline/render/src/index.ts"
@@ -58,22 +58,22 @@
         "packages/pipeline/render/src/*"
       ],
       "@llm": [
-        "packages/llm/src/index.ts"
+        "src/server/llm/index.ts"
       ],
       "@llm/*": [
-        "packages/llm/src/*"
+        "src/server/llm/*"
       ],
       "@pipeline-errors": [
-        "packages/pipeline/shared/src/index.ts"
+        "src/server/errors/index.ts"
       ],
       "@pipeline-errors/*": [
-        "packages/pipeline/shared/src/*"
+        "src/server/errors/*"
       ],
       "@storage": [
-        "packages/storage/src/index.ts"
+        "src/lib/storage/index.ts"
       ],
       "@storage/*": [
-        "packages/storage/src/*"
+        "src/lib/storage/*"
       ],
       "@ui": [
         "packages/ui/src/index.ts"
