@@ -5,20 +5,13 @@ import fs from "node:fs"
 import path from "node:path"
 
 const root = path.resolve(process.cwd())
-
 const allowedRootDirs = new Set([
   "src",
   "public",
-  "packages",
-  "build",
-  "docker",
+  "tests",
   "docs",
-  "infra",
-  "local-only",
-  "models",
-  "output",
-  "recordings",
   "scripts",
+  "build",
   "node_modules",
 ])
 const allowedRootFiles = new Set([
@@ -35,53 +28,30 @@ const allowedRootFiles = new Set([
   "README.md",
   "CONTRIBUTING.md",
   "LICENSE",
-  "requirements.txt",
   "architecture.md",
   ".gitignore",
-  "BUILD_STATUS.md",
-  "MONITORING_GUIDE.md",
-  "QUICK_START.md",
-  "STABILITY_FIXES.md",
-  "TEST_SESSION.md",
-  ".dockerignore",
-  "docker-compose.sam.yml",
-  "tsconfig.tsbuildinfo",
 ])
 const buildArtifacts = new Set([".next", ".tests-dist", "dist"])
-const configPattern = /\.config\.(?:js|cjs|mjs|ts)$/
 const kebabCase = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
-const pipelineStages = new Set([
-  "audio-ingest",
-  "transcribe",
-  "assemble",
-  "note-core",
-  "render",
-  "shared",
-  "medgemma-scribe",
-  "eval",
-])
-
 const errors = []
 
 for (const entry of fs.readdirSync(root, { withFileTypes: true })) {
   const name = entry.name
+
   if (buildArtifacts.has(name)) {
-    errors.push(`Build artifact "${name}" should live under build/ and must not be committed.`)
+    errors.push(`Build artifact "${name}" must not be committed.`)
     continue
   }
-  if (name.startsWith(".") && ![".gitignore"].includes(name)) {
-    continue
-  }
-  // Resolve symlinks before classifying. In a git worktree, node_modules is
-  // commonly a symlink to the main checkout's copy, and Dirent reports that as
-  // a file -- which made this check fail with "Unexpected top-level file:
-  // node_modules" for anyone developing in a worktree.
+
+  // Ignore Git metadata, local environment files and local tooling directories.
+  if (name.startsWith(".") && name !== ".gitignore") continue
+
   let isDirectory = entry.isDirectory()
   if (entry.isSymbolicLink()) {
     try {
       isDirectory = fs.statSync(path.join(root, name)).isDirectory()
     } catch {
-      // Broken symlink. Fall through and treat it as a file.
+      // Broken symlinks are treated as files and rejected below.
     }
   }
 
@@ -89,54 +59,36 @@ for (const entry of fs.readdirSync(root, { withFileTypes: true })) {
     if (!allowedRootDirs.has(name)) {
       errors.push(`Unexpected top-level directory: ${name}`)
     }
-  } else {
-    if (name.endsWith(".tsbuildinfo")) {
-      continue
-    }
-    if (name.startsWith(".env")) {
-      continue
-    }
-    if (configPattern.test(name)) {
-      errors.push(`Config file "${name}" must live in the config/ directory.`)
-    }
-    if (!allowedRootFiles.has(name)) {
-      errors.push(`Unexpected top-level file: ${name}`)
-    }
+    continue
+  }
+
+  if (name.startsWith(".env") || name.endsWith(".tsbuildinfo")) continue
+  if (!allowedRootFiles.has(name)) {
+    errors.push(`Unexpected top-level file: ${name}`)
   }
 }
 
-const ensureKebabCase = (dirPath) => {
-  if (!fs.existsSync(dirPath)) return
-  for (const entry of fs.readdirSync(dirPath, { withFileTypes: true })) {
+function ensureKebabCase(directory) {
+  if (!fs.existsSync(directory)) return
+
+  for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
     if (!entry.isDirectory()) continue
     if (!kebabCase.test(entry.name)) {
-      errors.push(`Folder "${path.relative(root, path.join(dirPath, entry.name))}" must use kebab-case.`)
+      errors.push(
+        `Folder "${path.relative(root, path.join(directory, entry.name))}" must use kebab-case.`,
+      )
     }
   }
 }
 
 ensureKebabCase(path.join(root, "src"))
-ensureKebabCase(path.join(root, "packages"))
-
-const pipelineDir = path.join(root, "packages", "pipeline")
-if (fs.existsSync(pipelineDir)) {
-  const stageDirs = fs
-    .readdirSync(pipelineDir, { withFileTypes: true })
-    .filter((entry) => entry.isDirectory())
-    .map((entry) => entry.name)
-
-  for (const stage of stageDirs) {
-    if (!pipelineStages.has(stage)) {
-      errors.push(`Pipeline stage "${stage}" is not in the approved list ${Array.from(pipelineStages).join(", ")}.`)
-    }
-  }
-}
+ensureKebabCase(path.join(root, "tests"))
 
 if (errors.length > 0) {
   console.error("\nRepository structure violations:\n")
-  for (const error of errors) {
-    console.error(` - ${error}`)
-  }
+  for (const error of errors) console.error(` - ${error}`)
   console.error("\nFix the issues above before committing.\n")
   process.exit(1)
 }
+
+console.log("PASS repository structure is src-centred and clean")

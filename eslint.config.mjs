@@ -19,9 +19,6 @@ const ignoredPaths = [
   ".next/**",
   "output/**",
   "scripts/**",
-  "packages/storage/src/__tests__/**",
-  "packages/pipeline/eval/src/tests/**",
-  "packages/llm/src/index.ts",
 ]
 const nodeFiles = [
   "*.config.{js,mjs,cjs}",
