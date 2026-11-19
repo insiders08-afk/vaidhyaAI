@@ -1,4 +1,4 @@
-import type { ClinicalConsultationResult, PatientSession, PrescriptionItem } from "./consultation-types"
+import type { ClinicalConsultationResult, PatientSession, PrescriptionItem } from "../consultation/types"
 
 export function formatWhatsAppPhone(rawPhone: string): string {
   const digits = rawPhone.replace(/\D/g, "")

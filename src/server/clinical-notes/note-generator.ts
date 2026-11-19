@@ -24,8 +24,6 @@ export async function createClinicalNoteText(params: ClinicalNoteRequest): Promi
   debugLog("=".repeat(80))
   debugLog("GENERATING CLINICAL NOTE (MARKDOWN)")
   debugLog("=".repeat(80))
-  debugLog(`Patient Name: ${patient_name || "Not provided"}`)
-  debugLog(`Visit Reason: ${visit_reason || "Not provided"}`)
   debugLog(`Note Length: ${noteLength}`)
   debugLog(`Template: ${template || "default"}`)
   debugLog(`Transcript length: ${transcript.length} characters`)
@@ -34,7 +32,6 @@ export async function createClinicalNoteText(params: ClinicalNoteRequest): Promi
     debugLog("⚠️  Transcript is empty - returning empty note structure")
     const emptyNote = createEmptyMarkdownNote()
     debugLog("=".repeat(80))
-    debugLog("FINAL CLINICAL NOTE (EMPTY):")
     debugLog("-".repeat(80))
     debugLog(emptyNote)
     debugLog("-".repeat(80))
@@ -42,12 +39,6 @@ export async function createClinicalNoteText(params: ClinicalNoteRequest): Promi
     return emptyNote
   }
 
-  debugLog("📝 Transcript being used for note generation:")
-  debugLog("-".repeat(80))
-  debugLog(transcript)
-  debugLog("-".repeat(80))
-
-  // Use versioned prompts with markdown template
   const systemPrompt = prompts.clinicalNote.currentVersion.getSystemPrompt(noteLength, template)
   const userPrompt = prompts.clinicalNote.currentVersion.getUserPrompt({
     transcript,
@@ -83,7 +74,6 @@ export async function createClinicalNoteText(params: ClinicalNoteRequest): Promi
     const normalizedMarkdown = normalizeMarkdownSections(cleanedMarkdown)
 
     debugLog("=".repeat(80))
-    debugLog("FINAL CLINICAL NOTE:")
     debugLog("=".repeat(80))
     debugLog(normalizedMarkdown)
     debugLog("=".repeat(80))

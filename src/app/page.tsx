@@ -5,8 +5,8 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Mic, Phone, Upload, User } from "lucide-react"
 import { VaidhyaHeader } from "@/components/vaidhya-header"
-import { saveActivePatient } from "@/lib/consultation-store"
-import type { PatientSession } from "@/lib/consultation-types"
+import { saveActivePatient } from "@/features/consultation/consultation-store"
+import type { PatientSession } from "@/features/consultation/types"
 
 const LANGUAGE_OPTIONS = [
   { value: "indic-auto", label: "Auto-Detect (Hindi, English & 9 Indian Languages)" },

@@ -29,8 +29,8 @@ import {
   loadConsultationAudioBlob,
   saveActiveConsultation,
 } from "@/lib/consultation-store"
-import type { PrescriptionItem, StoredConsultation } from "@/lib/consultation-types"
-import { buildWhatsAppIntentUrl, buildWhatsAppSummaryText } from "@/lib/whatsapp-intent"
+import type { PrescriptionItem, StoredConsultation } from "@/features/consultation/types"
+import { buildWhatsAppIntentUrl, buildWhatsAppSummaryText } from "@/features/sharing/whatsapp-intent"
 
 type ActiveTab = "notes" | "prescription" | "audio"
 

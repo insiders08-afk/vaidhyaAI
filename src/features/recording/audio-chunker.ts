@@ -5,7 +5,7 @@ import {
   StreamingResampler,
   TARGET_SAMPLE_RATE,
   createWavBlob,
-} from "@audio/capture/audio-processing"
+} from "@/features/recording/audio-processing"
 import { useCallback, useEffect, useRef, useState } from "react"
 
 /** Gnani REST /stt/v3 allows max 30 seconds per request. We use 24s chunks for headroom. */

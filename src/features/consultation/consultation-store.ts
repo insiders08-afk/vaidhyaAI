@@ -1,7 +1,7 @@
 "use client"
 
-import { loadSecureItem, saveSecureItem } from "@storage/secure-storage"
-import type { PatientSession, StoredConsultation } from "./consultation-types"
+import { loadSecureItem, saveSecureItem } from "@/lib/storage/secure-storage"
+import type { PatientSession, StoredConsultation } from "./types"
 
 const PATIENT_SESSION_KEY = "vaidhya_active_patient"
 const CONSULTATION_RESULT_KEY = "vaidhya_active_consultation"

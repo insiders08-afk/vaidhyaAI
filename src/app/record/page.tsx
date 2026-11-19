@@ -17,13 +17,13 @@ import {
   type AudioChunk,
   sliceAudioFileToWavChunks,
   useConsultationRecorder,
-} from "@/lib/audio-chunker"
+} from "@/features/recording/audio-chunker"
 import {
   loadActivePatient,
   saveActiveConsultation,
   saveConsultationAudioBlob,
-} from "@/lib/consultation-store"
-import type { ClinicalConsultationResult, PatientSession } from "@/lib/consultation-types"
+} from "@/features/consultation/consultation-store"
+import type { ClinicalConsultationResult, PatientSession } from "@/features/consultation/types"
 
 interface TranscribeApiResponse {
   ok: boolean
