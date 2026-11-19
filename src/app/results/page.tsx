@@ -28,7 +28,7 @@ import {
   loadActiveConsultation,
   loadConsultationAudioBlob,
   saveActiveConsultation,
-} from "@/lib/consultation-store"
+} from "@/features/consultation/consultation-store"
 import type { PrescriptionItem, StoredConsultation } from "@/features/consultation/types"
 import { buildWhatsAppIntentUrl, buildWhatsAppSummaryText } from "@/features/sharing/whatsapp-intent"
 

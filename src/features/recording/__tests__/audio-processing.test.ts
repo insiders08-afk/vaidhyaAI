@@ -7,7 +7,7 @@ import {
   createFinalSegmentFromRemaining,
   createWavBlob,
   drainSegments,
-} from "../capture/audio-processing.js"
+} from "../audio-processing.js"
 import { toAudioIngestError } from "../errors.js"
 
 test("StreamingResampler accumulates until enough samples are available", () => {

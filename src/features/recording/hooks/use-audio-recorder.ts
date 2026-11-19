@@ -14,7 +14,7 @@ import {
   createFinalSegmentFromRemaining,
   createWavBlob,
   drainSegments,
-} from "./audio-processing"
+} from "../audio-processing"
 
 export interface RecordedSegment {
   blob: Blob
