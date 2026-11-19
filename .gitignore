@@ -1,6 +1,5 @@
 node_modules
 .next
-apps/web/.next
 build/
 dist/
 release
@@ -16,7 +15,6 @@ __pycache__/
 .env.development.local
 .env.test.local
 .env.production.local
-apps/web/.env.local
 npm-debug.log*
 pnpm-debug.log*
 yarn-debug.log*

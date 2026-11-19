@@ -87,21 +87,21 @@
     }
   },
   "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "src/**/*.js",
+    "src/**/*.mjs",
+    "src/**/*.d.ts",
     "packages/**/*.ts",
     "packages/**/*.tsx",
     "packages/**/*.js",
     "packages/**/*.mjs",
-    "config/**/*.mjs",
-    "apps/web/*.ts",
-    "apps/web/*.tsx",
-    "apps/web/*.d.ts",
-    "apps/web/src/**/*.ts",
-    "apps/web/src/**/*.tsx",
-    "apps/web/src/**/*.d.ts"
+    "scripts/**/*.mjs",
+    "scripts/**/*.js"
   ],
   "exclude": [
     "node_modules",
     "build",
-    "apps/web/.next"
+    ".next"
   ]
 }

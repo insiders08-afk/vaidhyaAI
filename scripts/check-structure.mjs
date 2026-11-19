@@ -7,9 +7,9 @@ import path from "node:path"
 const root = path.resolve(process.cwd())
 
 const allowedRootDirs = new Set([
-  "apps",
+  "src",
+  "public",
   "packages",
-  "config",
   "build",
   "docker",
   "docs",
@@ -25,6 +25,13 @@ const allowedRootFiles = new Set([
   "package.json",
   "pnpm-lock.yaml",
   "tsconfig.json",
+  "tsconfig.test.json",
+  "next.config.mjs",
+  "postcss.config.mjs",
+  "tailwind.config.mjs",
+  "eslint.config.mjs",
+  "components.json",
+  "next-env.d.ts",
   "README.md",
   "CONTRIBUTING.md",
   "LICENSE",
@@ -108,7 +115,7 @@ const ensureKebabCase = (dirPath) => {
   }
 }
 
-ensureKebabCase(path.join(root, "apps"))
+ensureKebabCase(path.join(root, "src"))
 ensureKebabCase(path.join(root, "packages"))
 
 const pipelineDir = path.join(root, "packages", "pipeline")

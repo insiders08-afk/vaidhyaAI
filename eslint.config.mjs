@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url"
 import path from "node:path"
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const tsconfigRootDir = path.resolve(__dirname, "..")
+const tsconfigRootDir = __dirname
 const kebabCasePattern = "^[a-z0-9]+(?:-[a-z0-9]+)*$"
 
 const ignoredPaths = [
@@ -15,8 +15,8 @@ const ignoredPaths = [
   ".worktrees/**",
   ".pnpm-store/**",
   "node_modules/**",
-  "apps/web/public/**",
-  "apps/web/.next/**",
+  "public/**",
+  ".next/**",
   "output/**",
   "scripts/**",
   "packages/storage/src/__tests__/**",
@@ -24,7 +24,7 @@ const ignoredPaths = [
   "packages/llm/src/index.ts",
 ]
 const nodeFiles = [
-  "config/**/*.{js,mjs,cjs}",
+  "*.config.{js,mjs,cjs}",
   "scripts/**/*.{js,mjs,cjs}",
 ]
 const nodeGlobals = {

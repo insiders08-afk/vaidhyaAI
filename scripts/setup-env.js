@@ -7,8 +7,8 @@ const fs = require('fs')
 const path = require('path')
 const crypto = require('crypto')
 
-const envPath = path.join(__dirname, '../apps/web/.env.local')
-const envExamplePath = path.join(__dirname, '../apps/web/.env.local.example')
+const envPath = path.join(__dirname, '../.env.local')
+const envExamplePath = path.join(__dirname, '../.env.example')
 
 // Check if .env.local already exists
 if (fs.existsSync(envPath)) {
@@ -61,7 +61,7 @@ fs.writeFileSync(envPath, envContent)
 console.log('✅ Created .env.local with auto-generated storage key')
 console.log('')
 console.log('Next steps:')
-console.log('1. Edit apps/web/.env.local')
+console.log('1. Edit .env.local')
 console.log('2. Add your GNANI_API_KEY')
 console.log('3. Add your OPENAI_API_KEY')
 console.log('')
