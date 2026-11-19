@@ -112,7 +112,7 @@ test("resolveNoteModelConfig throws when an unknown provider has no base URL", (
   )
 })
 
-test("resolveNoteModelConfig rejects plaintext HTTP base URLs for HIPAA compliance", () => {
+test("resolveNoteModelConfig rejects plaintext HTTP base URLs under the secure transport policy", () => {
   assert.throws(
     () =>
       resolveNoteModelConfig({
@@ -200,7 +200,7 @@ test("isLoopbackHostname only accepts local addresses", () => {
 test("assertSecureEndpoint labels the offending setting without leaking a body", () => {
   assert.throws(
     () => assertSecureEndpoint("http://example.com/v1", "NOTE_MODEL_BASE_URL"),
-    /SECURITY ERROR: NOTE_MODEL_BASE_URL must use HTTPS for HIPAA compliance/,
+    /SECURITY ERROR: NOTE_MODEL_BASE_URL must use HTTPS under the secure transport policy/,
   )
   assert.equal(assertSecureEndpoint("https://example.com/v1", "NOTE_MODEL_BASE_URL").protocol, "https:")
 })

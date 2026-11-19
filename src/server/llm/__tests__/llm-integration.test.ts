@@ -91,7 +91,7 @@ test("runLLMRequest with JSON response format returns valid JSON", async () => {
 
   const response = await runLLMRequest({
     system: "You are a data generator. Generate test data following the schema.",
-    prompt: "Generate a person with name 'Alice' and age 30",
+    prompt: `Generate a person with name 'Alice' and age 30. Match this JSON schema: ${JSON.stringify(schema)}`,
     model: "gpt-4o-mini",
     responseFormat: "json_object",
   })
@@ -128,7 +128,7 @@ test("runLLMRequest with JSON response format returns requested fields", async (
 
   const response = await runLLMRequest({
     system: "Generate structured data.",
-    prompt: "Generate data with three fields: field_a, field_b, field_c",
+    prompt: `Generate data with three fields: field_a, field_b, field_c. Match this JSON schema: ${JSON.stringify(schema)}`,
     model: "gpt-4o-mini",
     responseFormat: "json_object",
   })
@@ -167,7 +167,7 @@ test("runLLMRequest handles errors gracefully", async () => {
   )
 })
 
-test("runLLMRequest enforces HTTPS for HIPAA compliance", async () => {
+test("runLLMRequest requires secure remote endpoints", async () => {
   // Skip if no API key
   if (!process.env.OPENAI_API_KEY && !process.env.LLM_API_KEY) {
     console.log("⚠️  Skipping HTTPS test - OPENAI_API_KEY/LLM_API_KEY not set")
@@ -175,7 +175,7 @@ test("runLLMRequest enforces HTTPS for HIPAA compliance", async () => {
   }
 
   // The Anthropic SDK defaults to https://api.anthropic.com
-  // This test verifies our validation layer catches any non-HTTPS configuration
+  // This test verifies the configured remote transport uses HTTPS
   const response = await runLLMRequest({
     system: "You are a test assistant.",
     prompt: "Say 'test'",
