@@ -1,23 +1,41 @@
 # Vaidhya AI
 
-Vaidhya AI is a cloud-assisted clinical documentation prototype for multilingual consultations. The web application captures consultation audio, sends short WAV segments to Gnani Prisma for speech recognition, generates a structured draft with an LLM, and prepares a reviewable text summary for optional WhatsApp handoff.
+Vaidhya AI is a cloud-assisted clinical documentation prototype for multilingual consultations. It captures consultation audio, sends short WAV segments to Gnani Prisma for speech recognition, generates a structured draft using an LLM, and prepares a reviewable text summary for optional WhatsApp handoff.
 
-> **Prototype safety notice:** This repository is not a clinically validated medical device. AI-generated notes and prescriptions are drafts, not medical advice or approved orders. A qualified clinician must verify the transcript, medicine names, strengths, dosage, timing, duration and follow-up before use. Do not use real patient or protected health information in demos or challenge submissions. The current web app does not provide production-grade authentication, access control, audit trails or regulatory compliance.
+> **Prototype safety notice:** This repository is not a clinically validated medical device. AI-generated notes and prescriptions are drafts, not medical advice or approved orders. A qualified clinician must verify the transcript, medicine names, strengths, dosage, timing, duration and follow-up before use. Do not use real patient or protected health information in demos or challenge submissions. The current prototype does not provide production-grade authentication, access control, auditable clinician approval or regulatory compliance.
 
-## Active web workflow
+## Application workflow
 
-1. **Patient/session setup** — `apps/web/src/app/page.tsx` records the local patient session and language choice.
-2. **Audio capture and chunking** — `apps/web/src/lib/audio-chunker.ts` converts microphone/upload audio to mono 16 kHz WAV and emits chunks up to 24 seconds.
-3. **Transcription** — `POST /api/transcribe` routes to Gnani Prisma v3 by default. Provider code lives in `packages/pipeline/transcribe/src/providers/`.
-4. **Transcript assembly** — `apps/web/src/app/record/page.tsx` queues segments by sequence number, supplies prior transcript context, retries recoverable failures and blocks note generation while segments remain unresolved.
-5. **Note generation** — `POST /api/generate-notes` asks the configured LLM for structured draft notes. The current Gnani adapter does not return verified doctor/patient diarization; the notes endpoint must not invent speaker turns from raw transcript text.
-6. **Review and sharing** — `apps/web/src/app/results/page.tsx` presents notes, prescriptions and audio. Medication edits reset the local share acknowledgement. WhatsApp opens a prefilled text draft; the user must review and send it manually.
+1. **Patient/session setup** — `src/app/page.tsx` stores the local patient session and language choice.
+2. **Audio capture and chunking** — `src/features/recording/audio-chunker.ts` converts microphone/upload audio to mono 16 kHz WAV and emits chunks up to 24 seconds. The streaming resampler and capture primitives live alongside it.
+3. **Transcription** — `POST /api/transcribe` routes to Gnani Prisma v3 by default. Provider adapters live in `src/server/transcription/providers/`.
+4. **Transcript assembly** — `src/app/record/page.tsx` queues results by sequence number, passes previous transcript context, retries recoverable failures and blocks note generation while chunks remain unresolved.
+5. **Note generation** — `POST /api/generate-notes` asks the configured LLM for structured draft notes. The default Gnani adapter does not return verified doctor/patient diarization; the notes endpoint must not invent speaker turns from raw transcript text.
+6. **Review and sharing** — `src/app/results/page.tsx` presents notes, prescriptions and audio. Medication edits reset the local share acknowledgement. WhatsApp opens a prefilled text draft; the user must review and send it manually.
+
+## Repository layout
+
+| Directory | Responsibility |
+|---|---|
+| `src/app` | Next.js App Router pages and API route handlers |
+| `src/components` | Shared UI and primitive components |
+| `src/features` | Product workflows: recording, consultation, transcription and sharing |
+| `src/server` | Server-side STT/LLM providers, clinical-note modules and error handling |
+| `src/lib` | Shared utilities and browser storage helpers |
+| `src/hooks` | App-wide React hooks, when needed |
+| `src/types` | Cross-feature types, when types cannot stay beside their owner |
+| `public` | PWA manifest, service worker, icons and audio worklets |
+| `tests` | Evaluation tests and safe audio fixtures |
+| `scripts` | Local setup and repository/PHI logging checks |
+| `docs` | Architecture, setup and operations documentation |
+
+The app uses Next.js App Router. Routes belong in `src/app`; this repository does not use the legacy Pages Router.
 
 ## Gnani Prisma v3 configuration
 
 Default endpoint: `https://api.vachana.ai/stt/v3`; default model: `prisma-v3.0`; default language setting: `indic-auto`.
 
-The server-side adapter exposes these controls:
+The server-side adapter supports:
 
 | Setting | Purpose |
 |---|---|
@@ -28,7 +46,7 @@ The server-side adapter exposes these controls:
 | `previous_text` | Prior segment transcript context (last 600 characters) |
 | `request_id` | Per-segment request correlation ID |
 
-These controls improve recognition context; they do not establish clinical speaker roles or verify clinical facts. The current Gnani response model used here does not expose speaker-attributed segments to the note generator.
+These controls provide recognition context; they do not prove a speaker's clinical role or verify clinical facts. The current Gnani adapter returns transcript, language and processing metadata, but no verified diarized segments.
 
 ## Quick start
 
@@ -37,17 +55,12 @@ Requirements: Node.js compatible with the repository's Next.js version and pnpm 
 ```bash
 pnpm install
 pnpm run setup
-```
-
-Configure `apps/web/.env.local` with your `GNANI_API_KEY` and `OPENAI_API_KEY`, then run:
-
-```bash
 pnpm dev
 ```
 
-The root development script serves the Next.js web app on port 3001.
+The setup command creates the root `.env.local` from `.env.example` when needed. Add `GNANI_API_KEY` and `OPENAI_API_KEY` to `.env.local`. The development server runs on port 3001.
 
-## Validation commands
+## Validation
 
 ```bash
 pnpm lint
@@ -57,20 +70,7 @@ pnpm test:no-phi-logs
 pnpm build
 ```
 
-## Active and legacy paths
-
-| Path | Current responsibility |
-|---|---|
-| `apps/web/src/app/record/page.tsx` | Active browser recording/upload orchestration |
-| `apps/web/src/lib/audio-chunker.ts` | Active browser audio decoding, resampling and chunking |
-| `apps/web/src/app/api/transcribe/route.ts` | Active transcription API route |
-| `apps/web/src/app/api/generate-notes/route.ts` | Active LLM draft-generation route |
-| `apps/web/src/app/results/page.tsx` | Active results, edits and sharing intent |
-| `packages/pipeline/audio-ingest` | Shared audio capture/resampling primitives |
-| `packages/pipeline/transcribe` | Gnani and optional NVIDIA provider adapters |
-| `packages/pipeline/assemble`, `note-core`, `render` | Reusable/inherited modules; not the active web request path unless imported by it |
-
-Some source, scripts and documentation are inherited from OpenScribe/StenoAI. The legacy segment uploader targets `/api/transcription/segment`; the active Vaidhya recorder posts `audio_file` to `/api/transcribe`. Do not connect the legacy uploader without reconciling endpoint, ordering and payload contracts. See [architecture.md](./architecture.md) for the current flow and storage notes.
+`pnpm typecheck` checks application TypeScript and compiles the test suite. `pnpm test` runs the compiled Node test files.
 
 ## Data handling and limitations
 
@@ -79,6 +79,7 @@ Some source, scripts and documentation are inherited from OpenScribe/StenoAI. Th
 - `NEXT_PUBLIC_SECURE_STORAGE_KEY` is client-visible by definition. It is not a server secret or per-user security boundary. Do not treat it as production encryption.
 - Audio is sent to the configured speech provider; transcript text is sent to the configured LLM provider.
 - The WhatsApp action creates a prefilled `wa.me` text draft. It does not automatically send messages, generate a PDF or attach the recording. Audio export uses the device share sheet/download separately.
+- The clinical-note verification utilities under `src/server/clinical-notes/verification` are not currently integrated into the active `/api/generate-notes` request path. Prompt safeguards are not clinical verification.
 
 Do not use this prototype with real patient data. A real-world pilot needs authentication, role-based access, explicit recording consent, encrypted or minimised audio persistence, retention/deletion controls, auditable clinician approval, vendor/privacy review, incident response and applicable legal/regulatory review.
 

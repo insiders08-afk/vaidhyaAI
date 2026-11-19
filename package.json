@@ -6,18 +6,18 @@
   "description": "Vaidhya AI – Cloud-only AI clinical scribe PWA with Gnani multilingual STT and structured prescriptions",
   "scripts": {
     "setup": "node scripts/setup-env.js",
-    "build": "next build apps/web --webpack",
-    "dev": "next dev apps/web --webpack -p 3001",
-    "start": "next start apps/web",
-    "lint": "pnpm lint:structure && eslint --config config/eslint.config.mjs .",
-    "lint:structure": "node config/scripts/check-structure.mjs",
-    "typecheck": "pnpm build:test",
-    "build:test": "rm -rf build/tests-dist && tsc --project config/tsconfig.test.json",
+    "build": "next build --webpack",
+    "dev": "next dev --webpack -p 3001",
+    "start": "next start -p 3001",
+    "lint": "pnpm lint:structure && eslint --config eslint.config.mjs .",
+    "lint:structure": "node scripts/check-structure.mjs",
+    "typecheck": "next typegen && tsc --noEmit && pnpm build:test",
+    "build:test": "rm -rf build/tests-dist && tsc --project tsconfig.test.json",
     "test": "pnpm build:test && pnpm test:run",
     "test:run": "find build/tests-dist -name \"*.test.js\" -print0 | xargs -0 -n 1 node --test",
     "test:no-phi-logs": "node scripts/check-no-phi-logs.mjs",
-    "test:llm": "pnpm build:test && find build/tests-dist/llm/src/__tests__ -name \"*.test.js\" -print0 | xargs -0 node --test",
-    "test:note": "pnpm build:test && find build/tests-dist/pipeline/note-core/src/__tests__ -name \"*.test.js\" -print0 | xargs -0 node --test"
+    "test:llm": "pnpm build:test && find build/tests-dist/src/server/llm/__tests__ -name \"*.test.js\" -print0 | xargs -0 node --test",
+    "test:note": "pnpm build:test && find build/tests-dist/src/server/clinical-notes/__tests__ -name \"*.test.js\" -print0 | xargs -0 node --test"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.71.2",
