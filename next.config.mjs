@@ -14,7 +14,7 @@ const ContentSecurityPolicy = `
   worker-src 'self' blob:;
   manifest-src 'self';
   block-all-mixed-content;
-`.replace(/\\s{2,}/g, ' ').trim()
+`.replace(/\s{2,}/g, ' ').trim()
 
 const securityHeaders = [
   { key: 'Content-Security-Policy', value: ContentSecurityPolicy },

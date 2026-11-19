@@ -11,7 +11,7 @@
     "start": "next start -p 3001",
     "lint": "pnpm lint:structure && eslint --config eslint.config.mjs .",
     "lint:structure": "node scripts/check-structure.mjs",
-    "typecheck": "tsc --noEmit && pnpm build:test",
+    "typecheck": "next typegen && tsc --noEmit && pnpm build:test",
     "build:test": "rm -rf build/tests-dist && tsc --project tsconfig.test.json",
     "test": "pnpm build:test && pnpm test:run",
     "test:run": "find build/tests-dist -name \"*.test.js\" -print0 | xargs -0 -n 1 node --test",
