@@ -7,7 +7,7 @@ import { parseMarkdownNote } from "../clinical-models/markdown-note.js"
  * Provider-configurable note generation tests
  *
  * These verify that createClinicalNoteText goes through the note model wrapper
- * (packages/llm/src/note-model) rather than a provider SDK directly, that the
+ * (src/server/llm/note-model) rather than a provider SDK directly, that the
  * NOTE_MODEL_* env config actually switches the outgoing request, and that the
  * error surface is unchanged when a non-default provider fails.
  */

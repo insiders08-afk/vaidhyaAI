@@ -9,9 +9,7 @@ import { flushAuditQueue } from "../audit-log.js"
  * Verifies that noteTemplateId / customNoteTemplate round-trip through
  * localStorage so the Settings selection survives reload and app restart.
  *
- * NOTE: the repo's `pnpm test:run` script currently excludes every test under
- * packages/storage/src/__tests__. Run this file directly with:
- *   pnpm build:test && node --test build/tests-dist/storage/src/__tests__/note-template-preferences.test.js
+ * This test is included in `pnpm test:run` and verifies persistence across a simulated reload.
  */
 
 const PREFERENCES_KEY = "openscribe_preferences"

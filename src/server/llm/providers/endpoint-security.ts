@@ -1,10 +1,8 @@
 /**
  * Endpoint security helpers shared by every note-generation transport.
  *
- * HIPAA Compliance: PHI must never leave the machine over plaintext HTTP.
- * Remote endpoints therefore must be HTTPS. The only exception is an explicit
- * loopback address, which never leaves the host (this mirrors how the local
- * MedGemma path in packages/llm-medgemma talks to 127.0.0.1).
+ * Remote model endpoints must use HTTPS. Explicit loopback addresses are
+ * allowed for local development and locally hosted model transports.
  */
 
 const LOOPBACK_HOSTNAMES = new Set(["localhost", "127.0.0.1", "::1"])
@@ -52,7 +50,7 @@ export function assertSecureEndpoint(rawUrl: string, label: string): URL {
   }
 
   throw new Error(
-    `SECURITY ERROR: ${label} must use HTTPS for HIPAA compliance. ` +
+    `SECURITY ERROR: ${label} must use HTTPS under the secure transport policy. ` +
       `Received: ${parsed.protocol}//${parsed.host}`,
   )
 }

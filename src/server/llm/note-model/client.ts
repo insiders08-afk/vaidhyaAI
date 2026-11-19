@@ -3,7 +3,7 @@
  *
  * This is the only entry point the note-generation service uses. It owns
  * provider selection, client initialization, and request execution, so
- * packages/pipeline/note-core never touches a provider SDK directly.
+ * src/server/clinical-notes never touches a provider SDK directly.
  */
 
 import { DEFAULT_ANTHROPIC_MODEL, runAnthropicCompletion } from "../providers/anthropic"
