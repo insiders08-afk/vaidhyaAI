@@ -27,62 +27,14 @@
       "@/*": [
         "./src/*"
       ],
-      "@audio": [
-        "src/features/recording/index.ts"
-      ],
-      "@audio/*": [
-        "src/features/recording/*"
-      ],
-      "@transcription": [
-        "src/server/transcription/index.ts"
-      ],
-      "@transcription/*": [
-        "src/server/transcription/*"
-      ],
-      "@transcript-assembly": [
-        "src/server/transcription/assembly/index.ts"
-      ],
-      "@transcript-assembly/*": [
-        "src/server/transcription/assembly/*"
-      ],
-      "@note-core": [
-        "src/server/clinical-notes/index.ts"
-      ],
-      "@note-core/*": [
-        "src/server/clinical-notes/*"
-      ],
-      "@note-rendering": [
-        "packages/pipeline/render/src/index.ts"
-      ],
-      "@note-rendering/*": [
-        "packages/pipeline/render/src/*"
-      ],
-      "@llm": [
-        "src/server/llm/index.ts"
-      ],
-      "@llm/*": [
-        "src/server/llm/*"
-      ],
-      "@pipeline-errors": [
-        "src/server/errors/index.ts"
-      ],
-      "@pipeline-errors/*": [
-        "src/server/errors/*"
-      ],
-      "@storage": [
-        "src/lib/storage/index.ts"
-      ],
-      "@storage/*": [
-        "src/lib/storage/*"
-      ],
       "@ui": [
-        "packages/ui/src/index.ts"
+        "src/components"
       ],
       "@ui/*": [
-        "packages/ui/src/*"
+        "src/components/*"
       ],
       "@ui/lib/*": [
-        "packages/ui/src/lib/*"
+        "src/lib/*"
       ]
     }
   },
@@ -96,6 +48,7 @@
     "packages/**/*.tsx",
     "packages/**/*.js",
     "packages/**/*.mjs",
+    "tests/**/*.ts",
     "scripts/**/*.mjs",
     "scripts/**/*.js"
   ],

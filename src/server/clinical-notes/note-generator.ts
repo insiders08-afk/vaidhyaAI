@@ -1,11 +1,11 @@
-import { generateNoteCompletion, prompts } from "@llm"
-import { toPipelineStageError } from "@pipeline-errors"
+import { generateNoteCompletion, prompts } from "@/server/llm"
+import { toPipelineStageError } from "@/server/errors"
 import { 
   extractMarkdownFromResponse, 
   normalizeMarkdownSections,
   createEmptyMarkdownNote 
 } from "./clinical-models/markdown-note"
-import { debugLog, debugError, debugWarn } from "@storage"
+import { debugLog, debugError, debugWarn } from "@/lib/storage"
 
 export type NoteLength = "short" | "long"
 

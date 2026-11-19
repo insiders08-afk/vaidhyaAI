@@ -1,4 +1,4 @@
-import { PipelineStageError } from "@pipeline-errors"
+import { PipelineStageError } from "@/server/errors"
 
 export interface WavInfo {
   sampleRate: number

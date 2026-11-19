@@ -1,4 +1,3 @@
-/* eslint-env node */
 const ContentSecurityPolicy = `
   default-src 'self';
   script-src 'self' 'unsafe-inline' ${process.env.NODE_ENV === "production" ? "" : "'unsafe-eval'"} https://va.vercel-scripts.com;
@@ -29,9 +28,7 @@ const securityHeaders = [
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  typescript: { ignoreBuildErrors: true },
   images: { unoptimized: true },
-  output: 'standalone',
   async headers() {
     return [
       { source: '/(.*)', headers: securityHeaders },
@@ -45,22 +42,5 @@ const nextConfig = {
       },
     ]
   },
-  webpack: (config) => {
-    config.resolve.alias = {
-      ...config.resolve.alias,
-      '@audio': path.resolve(process.cwd(), 'src/features/recording'),
-      '@transcription': path.resolve(process.cwd(), 'src/server/transcription'),
-      '@transcript-assembly': path.resolve(process.cwd(), 'src/server/transcription/assembly'),
-      '@note-core': path.resolve(process.cwd(), 'src/server/clinical-notes'),
-      '@note-rendering': path.resolve(process.cwd(), 'packages/pipeline/render/src'),
-      '@llm': path.resolve(process.cwd(), 'src/server/llm'),
-      '@pipeline-errors': path.resolve(process.cwd(), 'src/server/errors'),
-      '@storage': path.resolve(process.cwd(), 'src/lib/storage'),
-      '@ui': path.resolve(process.cwd(), 'packages/ui/src'),
-      '@ui/lib': path.resolve(process.cwd(), 'packages/ui/src/lib'),
-    }
-    return config
-  },
 }
-import path from 'node:path'
 export default nextConfig
