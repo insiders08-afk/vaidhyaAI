@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { runLLMRequest } from "@/server/llm"
-import type { ClinicalConsultationResult, DiarizedTurn, PrescriptionItem } from "@/lib/consultation-types"
+import type { ClinicalConsultationResult, DiarizedTurn, PrescriptionItem } from "@/features/consultation/types"
 
 export const runtime = "nodejs"
 

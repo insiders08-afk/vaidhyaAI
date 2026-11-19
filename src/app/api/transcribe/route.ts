@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto"
 import { NextRequest, NextResponse } from "next/server"
-import { toPipelineError } from "@/server/errors"
+import { toPipelineError } from "@/lib/errors"
 import { resolveTranscriptionProvider, transcribeWithResolvedProvider } from "@/server/transcription"
 
 export const runtime = "nodejs"

@@ -12,8 +12,8 @@ import {
   toWhisperLanguageOverride,
   transcriptionLanguageLabel,
 } from "../transcription-languages.js"
-import { getPreferences, setPreferences } from "../../../../storage/src/preferences.js"
-import { flushAuditQueue } from "../../../../storage/src/audit-log.js"
+import { getPreferences, setPreferences } from "../../../lib/storage/preferences.js"
+import { flushAuditQueue } from "../../../lib/storage/audit-log.js"
 
 // --- Option list -----------------------------------------------------------
 

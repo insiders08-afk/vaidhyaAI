@@ -1,4 +1,4 @@
-import { PipelineStageError } from "@/server/errors"
+import { PipelineStageError } from "../../../lib/errors"
 
 export const DEFAULT_GNANI_API_URL = "https://api.vachana.ai/stt/v3"
 export const DEFAULT_GNANI_MODEL = "prisma-v3.0"

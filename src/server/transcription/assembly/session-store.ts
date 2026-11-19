@@ -1,4 +1,4 @@
-import { toPipelineError, type PipelineError } from "@/server/errors"
+import { toPipelineError, type PipelineError } from "../../../lib/errors"
 
 type TranscriptionStatus = "recording" | "finalizing" | "completed" | "error"
 

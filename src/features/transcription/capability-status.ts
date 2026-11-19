@@ -1,4 +1,4 @@
-import type { ProcessingMode } from "@/lib/storage/preferences"
+import type { ProcessingMode } from "../../lib/storage/preferences"
 
 /**
  * Pure, DOM-free resolution of which pipeline steps can run right now.
