@@ -12,16 +12,8 @@
     "emitDeclarationOnly": false
   },
   "include": [
-    "src/features/recording/**/*.ts",
-    "src/server/transcription/**/*.ts",
-    "src/server/clinical-notes/**/*.ts",
-    "src/server/errors/**/*.ts",
-    "src/server/llm/**/*.ts",
-    "src/lib/storage/**/*.ts",
-    "packages/pipeline/eval/src/**/*.ts",
-    "packages/ui/src/lib/capability-status.ts",
-    "packages/ui/src/lib/transcription-languages.ts",
-    "packages/ui/src/lib/__tests__/**/*.ts"
+    "src/**/*.ts",
+    "tests/**/*.ts"
   ],
   "exclude": [
     "node_modules",

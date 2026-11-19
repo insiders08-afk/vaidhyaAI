@@ -2,9 +2,9 @@ import assert from "node:assert/strict"
 import { readFile } from "node:fs/promises"
 import path from "node:path"
 import test from "node:test"
-import { parseWavHeader } from "../../../transcribe/src/core/wav.js"
+import { parseWavHeader } from "../../src/server/transcription/core/wav.js"
 
-const SAMPLE_MP3 = path.resolve(process.cwd(), "packages/pipeline/eval/src/cases/encounter/Sample Problem-Focused Standardized Patient Encounter.mp3")
+const SAMPLE_MP3 = path.resolve(process.cwd(), "tests/fixtures/audio/encounter/Sample Problem-Focused Standardized Patient Encounter.mp3")
 
 test("MP3 snippet is rejected by WAV validator", async () => {
   const mp3Buffer = await readFile(SAMPLE_MP3)

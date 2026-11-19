@@ -15,7 +15,7 @@ test("Phase 1: Audio processing - create WAV segments from synthetic audio", { t
   console.log("========================================")
   
   console.log("⏳ Importing audio-processing module...")
-  const audioProcessing = await import("../../../audio-ingest/src/capture/audio-processing.js")
+  const audioProcessing = await import("../../src/features/recording/audio-processing.js")
   console.log("✅ Module imported")
   
   const { createWavBlob, TARGET_SAMPLE_RATE } = audioProcessing
@@ -53,7 +53,7 @@ test("Phase 2: Audio segmentation - split audio into overlapping segments", { ti
   console.log("========================================")
   
   console.log("⏳ Importing audio-processing module...")
-  const audioProcessing = await import("../../../audio-ingest/src/capture/audio-processing.js")
+  const audioProcessing = await import("../../src/features/recording/audio-processing.js")
   console.log("✅ Module imported")
   
   const {
@@ -113,8 +113,8 @@ test("Phase 3: WAV parsing - validate WAV format", { timeout: 5000 }, async () =
   console.log("========================================")
   
   console.log("⏳ Importing modules...")
-  const audioProcessing = await import("../../../audio-ingest/src/capture/audio-processing.js")
-  const transcribeCore = await import("../../../transcribe/src/core/wav.js")
+  const audioProcessing = await import("../../src/features/recording/audio-processing.js")
+  const transcribeCore = await import("../../src/server/transcription/core/wav.js")
   console.log("✅ Modules imported")
   
   const { createWavBlob, TARGET_SAMPLE_RATE } = audioProcessing
@@ -153,8 +153,8 @@ test("Phase 4: Mock transcription - verify mocked API call", { timeout: 5000 }, 
   console.log("========================================")
   
   console.log("⏳ Importing modules...")
-  const audioProcessing = await import("../../../audio-ingest/src/capture/audio-processing.js")
-  const gnaniProvider = await import("../../../transcribe/src/providers/gnani-transcriber.js")
+  const audioProcessing = await import("../../src/features/recording/audio-processing.js")
+  const gnaniProvider = await import("../../src/server/transcription/providers/gnani-transcriber.js")
   console.log("✅ Modules imported")
   
   const { createWavBlob, TARGET_SAMPLE_RATE } = audioProcessing
@@ -210,7 +210,7 @@ test("Phase 5: Session store - assemble transcript segments", { timeout: 5000 },
   console.log("========================================")
   
   console.log("⏳ Importing session store...")
-  const assemblyModule = await import("../../../assemble/src/session-store.js")
+  const assemblyModule = await import("../../src/server/transcription/assembly/session-store.js")
   console.log("✅ Module imported")
   
   const { transcriptionSessionStore } = assemblyModule
@@ -266,7 +266,7 @@ test("Phase 6: Complete pipeline - audio to final transcript", { timeout: 10000 
   
   // PHASE 1: Create audio segments
   console.log("\n📥 PHASE 1: Audio Segmentation")
-  const audioProcessing = await import("../../../audio-ingest/src/capture/audio-processing.js")
+  const audioProcessing = await import("../../src/features/recording/audio-processing.js")
   const {
     DEFAULT_OVERLAP_MS,
     DEFAULT_SEGMENT_MS,
@@ -304,7 +304,7 @@ test("Phase 6: Complete pipeline - audio to final transcript", { timeout: 10000 
   
   // PHASE 2: Mock transcription
   console.log("\n🎤 PHASE 2: Transcription (Mocked)")
-  const gnaniProvider = await import("../../../transcribe/src/providers/gnani-transcriber.js")
+  const gnaniProvider = await import("../../src/server/transcription/providers/gnani-transcriber.js")
   const { transcribeWithGnani } = gnaniProvider
   
   const mockTexts = [
@@ -347,7 +347,7 @@ test("Phase 6: Complete pipeline - audio to final transcript", { timeout: 10000 
   
   // PHASE 3: Assembly
   console.log("\n🔗 PHASE 3: Assembly")
-  const assemblyModule = await import("../../../assemble/src/session-store.js")
+  const assemblyModule = await import("../../src/server/transcription/assembly/session-store.js")
   const { transcriptionSessionStore } = assemblyModule
   
   const sessionId = `pipeline-test-${Date.now()}`
