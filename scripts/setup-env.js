@@ -1,67 +1,82 @@
 #!/usr/bin/env node
 /**
- * Setup environment file with auto-generated NEXT_PUBLIC_SECURE_STORAGE_KEY
+ * Create the local environment file without overwriting existing credentials.
+ * The NEXT_PUBLIC key is a client-visible compatibility value, not a server secret.
  */
+const fs = require("node:fs")
+const path = require("node:path")
+const crypto = require("node:crypto")
 
-const fs = require('fs')
-const path = require('path')
-const crypto = require('crypto')
+const root = path.resolve(__dirname, "..")
+const envPath = path.join(root, ".env.local")
+const envExamplePath = path.join(root, ".env.example")
+const keyName = "NEXT_PUBLIC_SECURE_STORAGE_KEY"
+const placeholderValues = new Set([
+  "base64-secret",
+  "base64-32-byte-key-for-local-demo-only",
+  "PASTE_OUTPUT_FROM_OPENSSL_COMMAND",
+])
 
-const envPath = path.join(__dirname, '../.env.local')
-const envExamplePath = path.join(__dirname, '../.env.example')
+function hasConfiguredKey(content) {
+  const match = content.match(/^NEXT_PUBLIC_SECURE_STORAGE_KEY\s*=\s*(.*)$/m)
+  if (!match) return false
 
-// Check if .env.local already exists
-if (fs.existsSync(envPath)) {
-  console.log('✅ .env.local already exists')
-  
-  // Check if it has the NEXT_PUBLIC_SECURE_STORAGE_KEY
-  const envContent = fs.readFileSync(envPath, 'utf-8')
-  if (envContent.includes('NEXT_PUBLIC_SECURE_STORAGE_KEY=') && 
-      !envContent.includes('NEXT_PUBLIC_SECURE_STORAGE_KEY="base64-secret"') &&
-      !envContent.includes('NEXT_PUBLIC_SECURE_STORAGE_KEY=PASTE_OUTPUT_FROM_OPENSSL_COMMAND')) {
-    console.log('✅ NEXT_PUBLIC_SECURE_STORAGE_KEY already configured')
+  const value = match[1].trim().replace(/^["']|["']$/g, "")
+  return value.length > 0 && !placeholderValues.has(value)
+}
+
+function makeFallbackTemplate() {
+  return [
+    "# Gnani Vachana / Prisma v3",
+    'TRANSCRIPTION_PROVIDER="gnani"',
+    'GNANI_API_KEY="your-gnani-api-key"',
+    'GNANI_API_URL="https://api.vachana.ai/stt/v3"',
+    'GNANI_STT_MODEL="prisma-v3.0"',
+    'GNANI_LANGUAGE_CODE="indic-auto"',
+    'GNANI_STT_FORMAT="transcribe"',
+    'GNANI_STT_TOPIC="Outpatient medical consultation"',
+    'GNANI_STT_KEYTERMS=""',
+    'GNANI_STT_SPEAKER_NAMES=""',
+    "",
+    "# LLM used for clinical note drafting",
+    'OPENAI_API_KEY="sk-your-openai-key"',
+    'OPENAI_BASE_URL="https://api.openai.com/v1"',
+    'OPENAI_MODEL="gpt-4o"',
+    "",
+    "# Client-visible local compatibility key; not a production security boundary",
+    'NEXT_PUBLIC_SECURE_STORAGE_KEY="base64-32-byte-key-for-local-demo-only"',
+    "",
+  ].join("\n")
+}
+
+let envContent
+const existingEnv = fs.existsSync(envPath)
+if (existingEnv) {
+  envContent = fs.readFileSync(envPath, "utf8")
+  if (hasConfiguredKey(envContent)) {
+    console.log(".env.local already exists with a configured compatibility key.")
     process.exit(0)
   }
-}
-
-// Generate a secure random 32-byte key
-const secureKey = crypto.randomBytes(32).toString('base64')
-
-// Read the example file
-let envContent = ''
-if (fs.existsSync(envExamplePath)) {
-  envContent = fs.readFileSync(envExamplePath, 'utf-8')
-  
-  // Replace the placeholder with the generated key
-  envContent = envContent.replace(
-    'NEXT_PUBLIC_SECURE_STORAGE_KEY="base64-secret"',
-    `NEXT_PUBLIC_SECURE_STORAGE_KEY="${secureKey}"`
-  )
+} else if (fs.existsSync(envExamplePath)) {
+  envContent = fs.readFileSync(envExamplePath, "utf8")
 } else {
-  // Create from scratch if example doesn't exist
-  envContent = `# Gnani AI Vachana STT API key
-GNANI_API_KEY="your-gnani-api-key"
-GNANI_API_URL="https://api.vachana.ai/stt/v3"
-GNANI_STT_MODEL="prisma-v3.0"
-GNANI_LANGUAGE_CODE="indic-auto"
-
-# OpenAI GPT reasoning model
-OPENAI_API_KEY="sk-your-openai-key"
-OPENAI_BASE_URL="https://api.openai.com/v1"
-OPENAI_MODEL="gpt-4o"
-
-# Auto-generated secure storage key (do not modify)
-NEXT_PUBLIC_SECURE_STORAGE_KEY="${secureKey}"
-`
+  envContent = makeFallbackTemplate()
 }
 
-// Write the .env.local file
-fs.writeFileSync(envPath, envContent)
+const generatedKey = crypto.randomBytes(32).toString("base64")
+const generatedLine = `${keyName}="${generatedKey}"`
+const keyLinePattern = /^NEXT_PUBLIC_SECURE_STORAGE_KEY\s*=.*$/m
 
-console.log('✅ Created .env.local with auto-generated storage key')
-console.log('')
-console.log('Next steps:')
-console.log('1. Edit .env.local')
-console.log('2. Add your GNANI_API_KEY')
-console.log('3. Add your OPENAI_API_KEY')
-console.log('')
+if (keyLinePattern.test(envContent)) {
+  envContent = envContent.replace(keyLinePattern, generatedLine)
+} else {
+  envContent = `${envContent.trimEnd()}\n\n${generatedLine}\n`
+}
+
+fs.writeFileSync(envPath, envContent, { encoding: "utf8", mode: 0o600 })
+
+console.log(`Created ${path.relative(root, envPath)} and generated a local compatibility key.`)
+console.log("Next steps:")
+console.log("1. Add your GNANI_API_KEY.")
+console.log("2. Add your OPENAI_API_KEY.")
+console.log("3. Start the app with pnpm dev.")
