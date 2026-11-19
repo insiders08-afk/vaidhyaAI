@@ -26,28 +26,17 @@
     "paths": {
       "@/*": [
         "./src/*"
-      ],
-      "@ui": [
-        "src/components"
-      ],
-      "@ui/*": [
-        "src/components/*"
-      ],
-      "@ui/lib/*": [
-        "src/lib/*"
       ]
     }
   },
   "include": [
+    "next-env.d.ts",
+    ".next/types/**/*.ts",
     "src/**/*.ts",
     "src/**/*.tsx",
     "src/**/*.js",
     "src/**/*.mjs",
     "src/**/*.d.ts",
-    "packages/**/*.ts",
-    "packages/**/*.tsx",
-    "packages/**/*.js",
-    "packages/**/*.mjs",
     "tests/**/*.ts",
     "scripts/**/*.mjs",
     "scripts/**/*.js"
