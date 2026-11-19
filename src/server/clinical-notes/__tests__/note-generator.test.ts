@@ -186,7 +186,7 @@ test("createClinicalNoteText uses versioned prompts", async () => {
   // We don't need to call the API, just verify the structure exists
 
   // Import prompts using relative path to avoid module resolution issues in tests
-  const { prompts } = await import("../../../../llm/src/index.js")
+  const { prompts } = await import("../../llm/index.js")
 
   assert.ok(prompts.clinicalNote, "Should have clinicalNote prompts")
   assert.ok(prompts.clinicalNote.currentVersion, "Should have currentVersion")

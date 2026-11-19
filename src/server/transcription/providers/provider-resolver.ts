@@ -35,7 +35,7 @@ function normalizeProvider(rawProvider: string | undefined): string {
   return rawProvider?.trim().toLowerCase() || ""
 }
 
-export function resolveTranscriptionProvider(env: NodeJS.ProcessEnv = process.env): ResolvedTranscriptionProvider {
+export function resolveTranscriptionProvider(env: Partial<NodeJS.ProcessEnv> = process.env): ResolvedTranscriptionProvider {
   const provider = normalizeProvider(env.TRANSCRIPTION_PROVIDER)
 
   if (provider === "nvidia_parakeet" || provider === "parakeet" || provider === "nvidia") {

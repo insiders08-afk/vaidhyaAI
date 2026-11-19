@@ -18,7 +18,6 @@ const ignoredPaths = [
   "public/**",
   ".next/**",
   "output/**",
-  "scripts/**",
 ]
 const nodeFiles = [
   "*.config.{js,mjs,cjs}",
