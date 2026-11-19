@@ -1,4 +1,4 @@
-import { toPipelineError, type PipelineError } from "../../shared/src/error"
+import { toPipelineError, type PipelineError } from "@pipeline-errors"
 
 export function toAudioIngestError(error: unknown, code: "capture_error" | "processing_error"): PipelineError {
   return toPipelineError(error, {

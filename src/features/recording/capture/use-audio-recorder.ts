@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import { PipelineStageError, type PipelineError } from "../../../shared/src/error"
+import { PipelineStageError, type PipelineError } from "@pipeline-errors"
 import { requestSystemAudioStream } from "../devices/system-audio"
 import { toAudioIngestError } from "../errors"
 import {

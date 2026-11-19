@@ -1,4 +1,4 @@
-import { toPipelineError, type PipelineError } from "../../shared/src/error"
+import { toPipelineError, type PipelineError } from "@pipeline-errors"
 
 type TranscriptionStatus = "recording" | "finalizing" | "completed" | "error"
 

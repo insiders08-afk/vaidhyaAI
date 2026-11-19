@@ -1,11 +1,11 @@
-import { generateNoteCompletion, prompts } from "../../../llm/src/index"
-import { toPipelineStageError } from "../../shared/src/error"
+import { generateNoteCompletion, prompts } from "@llm"
+import { toPipelineStageError } from "@pipeline-errors"
 import { 
   extractMarkdownFromResponse, 
   normalizeMarkdownSections,
   createEmptyMarkdownNote 
 } from "./clinical-models/markdown-note"
-import { debugLog, debugLogPHI, debugError, debugWarn } from "../../../storage/src/index"
+import { debugLog, debugError, debugWarn } from "@storage"
 
 export type NoteLength = "short" | "long"
 
@@ -24,8 +24,8 @@ export async function createClinicalNoteText(params: ClinicalNoteRequest): Promi
   debugLog("=".repeat(80))
   debugLog("GENERATING CLINICAL NOTE (MARKDOWN)")
   debugLog("=".repeat(80))
-  debugLogPHI(`Patient Name: ${patient_name || "Not provided"}`)
-  debugLogPHI(`Visit Reason: ${visit_reason || "Not provided"}`)
+  debugLog(`Patient Name: ${patient_name || "Not provided"}`)
+  debugLog(`Visit Reason: ${visit_reason || "Not provided"}`)
   debugLog(`Note Length: ${noteLength}`)
   debugLog(`Template: ${template || "default"}`)
   debugLog(`Transcript length: ${transcript.length} characters`)
@@ -36,7 +36,7 @@ export async function createClinicalNoteText(params: ClinicalNoteRequest): Promi
     debugLog("=".repeat(80))
     debugLog("FINAL CLINICAL NOTE (EMPTY):")
     debugLog("-".repeat(80))
-    debugLogPHI(emptyNote)
+    debugLog(emptyNote)
     debugLog("-".repeat(80))
     debugLog("=".repeat(80))
     return emptyNote
@@ -44,7 +44,7 @@ export async function createClinicalNoteText(params: ClinicalNoteRequest): Promi
 
   debugLog("📝 Transcript being used for note generation:")
   debugLog("-".repeat(80))
-  debugLogPHI(transcript)
+  debugLog(transcript)
   debugLog("-".repeat(80))
 
   // Use versioned prompts with markdown template
@@ -85,7 +85,7 @@ export async function createClinicalNoteText(params: ClinicalNoteRequest): Promi
     debugLog("=".repeat(80))
     debugLog("FINAL CLINICAL NOTE:")
     debugLog("=".repeat(80))
-    debugLogPHI(normalizedMarkdown)
+    debugLog(normalizedMarkdown)
     debugLog("=".repeat(80))
 
     return normalizedMarkdown

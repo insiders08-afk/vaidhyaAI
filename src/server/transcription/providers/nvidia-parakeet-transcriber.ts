@@ -1,4 +1,4 @@
-import { PipelineStageError } from "../../../shared/src/error"
+import { PipelineStageError } from "@pipeline-errors"
 
 export interface DiarizedUtterance {
   speaker: "Clinician" | "Patient" | string

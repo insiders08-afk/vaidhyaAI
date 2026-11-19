@@ -1,7 +1,5 @@
 export { parseWavHeader, getWavDataChunk, isLikelySilentPcm16 } from "./core/wav"
 export type { WavInfo } from "./core/wav"
-export { useSegmentUpload } from "./hooks/use-segment-upload"
-export type { PendingSegment, UploadError } from "./hooks/use-segment-upload"
 
 export {
   DEFAULT_GNANI_API_URL,
